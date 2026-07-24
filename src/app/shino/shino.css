@@ -1,0 +1,116 @@
+.shino-theme {
+  --shino-bg: #f8f5ef;
+  --shino-text: #2a2723;
+  --shino-text-soft: #55504a;
+  --shino-gold: #b08d57;
+  --shino-gold-deep: #8c6f3e;
+  --shino-gold-line: #d9c9a3;
+  --shino-hairline: #e4ddcd;
+
+  background: var(--shino-bg);
+  color: var(--shino-text);
+}
+
+.shino-theme .shino-serif {
+  font-family: var(--font-shippori-mincho), serif;
+}
+
+.shino-theme .shino-latin {
+  font-family: var(--font-cormorant), serif;
+}
+
+/* Scroll reveal */
+.shino-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.9s ease,
+    transform 0.9s ease;
+}
+
+.shino-reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shino-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Hero image */
+.shino-hero-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  background: linear-gradient(160deg, #efe8d8 0%, #e4d9c2 55%, #d8c9a8 100%);
+  box-shadow: 0 18px 40px -20px rgba(42, 39, 35, 0.35);
+}
+
+@media (min-width: 640px) {
+  .shino-hero-image {
+    aspect-ratio: 16 / 11;
+    border-radius: 1.75rem;
+  }
+}
+
+.shino-hero-image-img {
+  object-fit: cover;
+}
+
+/* CTA button */
+.shino-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 60px;
+  padding: 0.5rem 1.5rem;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #3a2648 0%, #241531 45%, #0c0810 100%);
+  border: 1px solid var(--shino-gold);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 6px rgba(0, 0, 0, 0.4),
+    0 10px 24px -10px rgba(20, 12, 28, 0.55);
+  color: #f7f1e2;
+  font-family: var(--font-shippori-mincho), serif;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.shino-cta span {
+  position: relative;
+}
+
+.shino-cta:hover {
+  transform: scale(1.03);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 6px rgba(0, 0, 0, 0.4),
+    0 14px 30px -10px rgba(176, 141, 87, 0.45);
+}
+
+.shino-cta:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shino-cta {
+    transition: none;
+  }
+  .shino-cta:hover,
+  .shino-cta:active {
+    transform: none;
+  }
+}
