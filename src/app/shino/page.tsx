@@ -31,7 +31,7 @@ export default function ShinoLandingPage() {
 
         <Reveal delayMs={100}>
           <h1 className="shino-serif mt-5 text-2xl leading-relaxed tracking-wide sm:text-3xl">
-            紫乃の会員制バーへようこそ🥂
+            紫乃の会員制バーへようこそ
           </h1>
         </Reveal>
 
