@@ -1,5 +1,8 @@
-import { ContactMethod } from "@/types/freeReadingRequest";
-import { NormalizedFreeReadingRequest } from "@/lib/freeReadingRequests/validation";
+import { ContactMethod, HearingFormValues } from "@/types/freeReadingRequest";
+import {
+  NormalizedFreeReadingRequest,
+  NormalizedHearing,
+} from "@/lib/freeReadingRequests/validation";
 
 export function normalizedRequestToInsertRow(data: NormalizedFreeReadingRequest) {
   return {
@@ -34,6 +37,7 @@ export interface FreeReadingRequestRow {
   contact_method: string;
   line_name: string;
   instagram_username: string | null;
+  memo: string;
   created_at: string;
 }
 
@@ -52,6 +56,7 @@ export interface FreeReadingRequestListItem {
   contactMethod: ContactMethod;
   lineName: string;
   instagramUsername: string | null;
+  memo: string;
   createdAt: string;
 }
 
@@ -73,6 +78,61 @@ export function rowToRequestListItem(
     contactMethod: row.contact_method as ContactMethod,
     lineName: row.line_name,
     instagramUsername: row.instagram_username,
+    // memo列は0005マイグレーション未適用のDBだとundefinedになりうるため、
+    // 適用前でも操作フォームが壊れないようフォールバックしておく
+    memo: row.memo ?? "",
     createdAt: row.created_at,
+  };
+}
+
+// LINEヒアリングの手動登録・編集(管理画面専用のCRM機能)用の変換関数。
+// 公開フォーム由来の項目(gender/partnerGender/contactMethod/instagramUsername)は
+// 手動登録では使わないため、gender/partner_genderは空・NULLで、
+// contact_methodはLINEヒアリング由来であることを示す固定値"line"で保存する。
+export function hearingToInsertRow(data: NormalizedHearing) {
+  return {
+    reading_name: data.name,
+    line_name: data.lineName,
+    birth_date: data.birthDate,
+    partner_name: data.partnerName,
+    partner_birth_date: data.partnerBirthDate,
+    content: data.content,
+    ideal_future: data.idealFuture,
+    memo: data.memo,
+    status: data.status,
+    contact_method: "line",
+    gender: "",
+    partner_gender: null,
+    instagram_username: null,
+  };
+}
+
+export function hearingToUpdateRow(data: NormalizedHearing) {
+  return {
+    reading_name: data.name,
+    line_name: data.lineName,
+    birth_date: data.birthDate,
+    partner_name: data.partnerName,
+    partner_birth_date: data.partnerBirthDate,
+    content: data.content,
+    ideal_future: data.idealFuture,
+    memo: data.memo,
+    status: data.status,
+  };
+}
+
+export function rowToHearingFormValues(
+  row: FreeReadingRequestRow,
+): HearingFormValues {
+  return {
+    lineName: row.line_name,
+    name: row.reading_name,
+    birthDate: row.birth_date ?? "",
+    partnerName: row.partner_name ?? "",
+    partnerBirthDate: row.partner_birth_date ?? "",
+    content: row.content,
+    idealFuture: row.ideal_future ?? "",
+    memo: row.memo ?? "",
+    status: row.status,
   };
 }

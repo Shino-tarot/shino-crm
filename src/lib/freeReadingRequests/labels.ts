@@ -18,6 +18,10 @@ export const STATUS_LABELS: Record<string, { label: string; className: string }>
   archived: { label: "対応不要", className: "bg-zinc-100 text-zinc-500" },
 };
 
+export const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(
+  ([value, info]) => ({ value, label: info.label }),
+);
+
 export const CONTACT_METHOD_LABELS: Record<
   string,
   { label: string; className: string }

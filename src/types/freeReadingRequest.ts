@@ -45,3 +45,29 @@ export const EMPTY_FREE_READING_FORM_VALUES: FreeReadingFormValues = {
   lineName: "",
   instagramUsername: "",
 };
+
+// LINEで届いた無料鑑定ヒアリングをCRM側で管理するための入力値
+// (公開フォーム由来のFreeReadingFormValuesとは異なり、性別・鑑定方法の選択は不要)
+export interface HearingFormValues {
+  lineName: string;
+  name: string;
+  birthDate: string;
+  partnerName: string;
+  partnerBirthDate: string;
+  content: string;
+  idealFuture: string;
+  memo: string;
+  status: string;
+}
+
+export const EMPTY_HEARING_FORM_VALUES: HearingFormValues = {
+  lineName: "",
+  name: "",
+  birthDate: "",
+  partnerName: "",
+  partnerBirthDate: "",
+  content: "",
+  idealFuture: "",
+  memo: "",
+  status: "new",
+};

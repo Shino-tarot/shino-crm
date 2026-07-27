@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { FreeReadingRequestListItem } from "@/lib/freeReadingRequests/mapper";
 import {
   CONTACT_METHOD_LABELS,
@@ -104,8 +105,13 @@ export function FreeReadingRequestTable({
                     {statusInfo.label}
                   </span>
                 </td>
-                <td className="px-4 py-3 font-medium text-zinc-900">
-                  {request.name}
+                <td className="px-4 py-3 font-medium">
+                  <Link
+                    href={`/customers/free-reading-requests/${request.id}`}
+                    className="text-violet-600 hover:text-violet-800"
+                  >
+                    {request.name}
+                  </Link>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-zinc-600">
                   {request.birthDate ? formatDate(request.birthDate) : "-"}

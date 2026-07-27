@@ -1,11 +1,16 @@
 "use server";
 
 import { supabaseServerClient } from "@/lib/supabase/server";
-import { FreeReadingFormValues } from "@/types/freeReadingRequest";
-import { validateFreeReadingForm } from "@/lib/freeReadingRequests/validation";
+import { FreeReadingFormValues, HearingFormValues } from "@/types/freeReadingRequest";
+import {
+  validateFreeReadingForm,
+  validateHearingForm,
+} from "@/lib/freeReadingRequests/validation";
 import {
   FreeReadingRequestListItem,
   FreeReadingRequestRow,
+  hearingToInsertRow,
+  hearingToUpdateRow,
   normalizedRequestToInsertRow,
   rowToRequestListItem,
 } from "@/lib/freeReadingRequests/mapper";
@@ -70,4 +75,72 @@ export async function listFreeReadingRequests(): Promise<
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data as FreeReadingRequestRow[]).map(rowToRequestListItem);
+}
+
+export async function getFreeReadingRequest(
+  id: string,
+): Promise<FreeReadingRequestRow | null> {
+  const { data, error } = await supabaseServerClient
+    .from("free_reading_requests")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data as FreeReadingRequestRow | null;
+}
+
+export type SaveHearingResult =
+  | { ok: true; id: string }
+  | { ok: false; errors: Record<string, string> };
+
+// LINEでのヒアリングを管理画面から手動登録する(公開フォーム経由ではないため
+// honeypot等のスパム対策は不要)。
+export async function createHearingRequest(
+  values: HearingFormValues,
+): Promise<SaveHearingResult> {
+  const result = validateHearingForm(values);
+  if (!result.valid) {
+    return { ok: false, errors: result.errors };
+  }
+
+  const { data, error } = await supabaseServerClient
+    .from("free_reading_requests")
+    .insert(hearingToInsertRow(result.data))
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error("[hearing] insert failed:", error.message);
+    return {
+      ok: false,
+      errors: { _form: "登録に失敗しました。時間をおいて再度お試しください。" },
+    };
+  }
+
+  return { ok: true, id: data.id };
+}
+
+export async function updateHearingRequest(
+  id: string,
+  values: HearingFormValues,
+): Promise<SaveHearingResult> {
+  const result = validateHearingForm(values);
+  if (!result.valid) {
+    return { ok: false, errors: result.errors };
+  }
+
+  const { error } = await supabaseServerClient
+    .from("free_reading_requests")
+    .update(hearingToUpdateRow(result.data))
+    .eq("id", id);
+
+  if (error) {
+    console.error("[hearing] update failed:", error.message);
+    return {
+      ok: false,
+      errors: { _form: "更新に失敗しました。時間をおいて再度お試しください。" },
+    };
+  }
+
+  return { ok: true, id };
 }
