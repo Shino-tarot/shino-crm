@@ -5,12 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LineHearingPasteBox } from "@/components/freeReadingRequests/LineHearingPasteBox";
 import { HearingFormFields } from "@/components/freeReadingRequests/HearingFormFields";
+import { FreeReadingRequestHistoryList } from "@/components/freeReadingRequests/FreeReadingRequestHistoryList";
+import { ConsultationStatsCard } from "@/components/freeReadingRequests/ConsultationStatsCard";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   deleteFreeReadingRequest,
   updateHearingRequest,
 } from "@/lib/freeReadingRequests/actions";
 import { HearingFormValues } from "@/types/freeReadingRequest";
+import { FreeReadingRequestListItem } from "@/lib/freeReadingRequests/mapper";
+import { ConsultationStatsResult } from "@/lib/freeReadingRequests/consultationStats";
 import { ParsedHearing } from "@/lib/freeReadingRequests/parseHearingText";
 import { formatDateTime } from "@/lib/format";
 
@@ -18,12 +22,16 @@ interface HearingDetailClientProps {
   id: string;
   initialValues: HearingFormValues;
   createdAt: string;
+  history: FreeReadingRequestListItem[];
+  consultationStats: ConsultationStatsResult;
 }
 
 export function HearingDetailClient({
   id,
   initialValues,
   createdAt,
+  history,
+  consultationStats,
 }: HearingDetailClientProps) {
   const router = useRouter();
   const [values, setValues] = useState<HearingFormValues>(initialValues);
@@ -107,6 +115,8 @@ export function HearingDetailClient({
         </h1>
       </div>
 
+      <ConsultationStatsCard stats={consultationStats} />
+
       <LineHearingPasteBox onParsed={applyParsed} />
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -127,6 +137,8 @@ export function HearingDetailClient({
           </button>
         </div>
       </form>
+
+      <FreeReadingRequestHistoryList history={history} />
 
       <div className="mt-10 rounded-md border border-red-200 bg-red-50 p-4">
         <h2 className="text-sm font-semibold text-red-800">顧客データの削除</h2>

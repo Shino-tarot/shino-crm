@@ -58,7 +58,7 @@ export function FreeReadingRequestTable({
               ステータス
             </th>
             <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
-              名前
+              LINE表示名
             </th>
             <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
               生年月日
@@ -113,12 +113,12 @@ export function FreeReadingRequestTable({
                     {statusInfo.label}
                   </span>
                 </td>
-                <td className="px-4 py-3 font-medium">
+                <td className="whitespace-nowrap px-4 py-3 font-medium">
                   <Link
                     href={`/customers/free-reading-requests/${request.id}`}
                     className="text-violet-600 hover:text-violet-800"
                   >
-                    {request.name}
+                    {request.lineName || "-"}
                   </Link>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-zinc-600">

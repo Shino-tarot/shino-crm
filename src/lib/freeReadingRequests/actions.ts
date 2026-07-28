@@ -92,6 +92,37 @@ export async function getFreeReadingRequest(
   return data as FreeReadingRequestRow | null;
 }
 
+// PostgRESTのilikeパターンとして解釈されないよう、line_name中の%と_をエスケープする
+function escapeLikePattern(value: string): string {
+  return value.replace(/[%_]/g, (match) => `\\${match}`);
+}
+
+// 同じLINE表示名を持つ他の申込を「過去の無料鑑定履歴」として取得する。
+// line_nameは前後空白や大文字小文字の違いで別人扱いにならないよう、
+// DB側ではilikeで緩めに絞り込み、最終的な同一判定はJS側でtrim+小文字化した完全一致で行う
+// (部分一致のレコードが誤って履歴に含まれないようにするため)。
+export async function listFreeReadingRequestHistory(
+  lineName: string,
+  excludeId: string,
+): Promise<FreeReadingRequestListItem[]> {
+  const trimmed = lineName.trim();
+  if (!trimmed) return [];
+
+  const { data, error } = await supabaseServerClient
+    .from("free_reading_requests")
+    .select("*")
+    .ilike("line_name", `%${escapeLikePattern(trimmed)}%`)
+    .neq("id", excludeId)
+    .order("application_date", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+
+  const target = trimmed.toLowerCase();
+  return (data as FreeReadingRequestRow[])
+    .filter((row) => row.line_name.trim().toLowerCase() === target)
+    .map(rowToRequestListItem);
+}
+
 export type SaveHearingResult =
   | { ok: true; id: string }
   | { ok: false; errors: Record<string, string> };

@@ -1,9 +1,13 @@
 import Link from "next/link";
-import { getFreeReadingRequest } from "@/lib/freeReadingRequests/actions";
+import {
+  getFreeReadingRequest,
+  listFreeReadingRequestHistory,
+} from "@/lib/freeReadingRequests/actions";
 import {
   rowToHearingFormValues,
   rowToRequestListItem,
 } from "@/lib/freeReadingRequests/mapper";
+import { computeConsultationStats } from "@/lib/freeReadingRequests/consultationStats";
 import { HearingDetailClient } from "@/components/freeReadingRequests/HearingDetailClient";
 
 export const dynamic = "force-dynamic";
@@ -34,12 +38,24 @@ export default async function HearingDetailPage({
 
   const listItem = rowToRequestListItem(row);
   const formValues = rowToHearingFormValues(row);
+  const history = await listFreeReadingRequestHistory(row.line_name, id);
+  const consultationStats = computeConsultationStats(
+    {
+      id,
+      lineName: row.line_name,
+      applicationDate: row.application_date,
+      createdAt: row.created_at,
+    },
+    history,
+  );
 
   return (
     <HearingDetailClient
       id={id}
       initialValues={formValues}
       createdAt={listItem.createdAt}
+      history={history}
+      consultationStats={consultationStats}
     />
   );
 }
