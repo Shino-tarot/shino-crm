@@ -7,6 +7,8 @@ interface ConfirmDialogProps {
   title: string;
   message: ReactNode;
   confirmLabel?: string;
+  confirmingLabel?: string;
+  isConfirming?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }
@@ -15,6 +17,8 @@ export function ConfirmDialog({
   title,
   message,
   confirmLabel = "実行する",
+  confirmingLabel = "処理中...",
+  isConfirming = false,
   onCancel,
   onConfirm,
 }: ConfirmDialogProps) {
@@ -25,16 +29,18 @@ export function ConfirmDialog({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100"
+          disabled={isConfirming}
+          className="rounded-md px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100 disabled:opacity-50"
         >
           キャンセル
         </button>
         <button
           type="button"
           onClick={onConfirm}
-          className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+          disabled={isConfirming}
+          className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
         >
-          {confirmLabel}
+          {isConfirming ? confirmingLabel : confirmLabel}
         </button>
       </div>
     </Modal>

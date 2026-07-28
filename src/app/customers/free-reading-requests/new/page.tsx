@@ -11,12 +11,14 @@ import {
   HearingFormValues,
 } from "@/types/freeReadingRequest";
 import { ParsedHearing } from "@/lib/freeReadingRequests/parseHearingText";
+import { getTodayDateString } from "@/lib/format";
 
 export default function NewHearingPage() {
   const router = useRouter();
-  const [values, setValues] = useState<HearingFormValues>(
-    EMPTY_HEARING_FORM_VALUES,
-  );
+  const [values, setValues] = useState<HearingFormValues>(() => ({
+    ...EMPTY_HEARING_FORM_VALUES,
+    applicationDate: getTodayDateString(),
+  }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 

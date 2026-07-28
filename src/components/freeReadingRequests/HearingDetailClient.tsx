@@ -2,9 +2,14 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { LineHearingPasteBox } from "@/components/freeReadingRequests/LineHearingPasteBox";
 import { HearingFormFields } from "@/components/freeReadingRequests/HearingFormFields";
-import { updateHearingRequest } from "@/lib/freeReadingRequests/actions";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import {
+  deleteFreeReadingRequest,
+  updateHearingRequest,
+} from "@/lib/freeReadingRequests/actions";
 import { HearingFormValues } from "@/types/freeReadingRequest";
 import { ParsedHearing } from "@/lib/freeReadingRequests/parseHearingText";
 import { formatDateTime } from "@/lib/format";
@@ -20,10 +25,14 @@ export function HearingDetailClient({
   initialValues,
   createdAt,
 }: HearingDetailClientProps) {
+  const router = useRouter();
   const [values, setValues] = useState<HearingFormValues>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   function updateField<K extends keyof HearingFormValues>(
     field: K,
@@ -67,6 +76,19 @@ export function HearingDetailClient({
     }
   }
 
+  async function handleDelete() {
+    setIsDeleting(true);
+    setDeleteError("");
+    try {
+      await deleteFreeReadingRequest(id);
+      router.push("/customers/free-reading-requests?deleted=1");
+    } catch {
+      setDeleteError("削除に失敗しました。時間をおいて再度お試しください。");
+      setIsDeleting(false);
+      setIsDeleteConfirmOpen(false);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8">
       <Link
@@ -78,7 +100,7 @@ export function HearingDetailClient({
 
       <div className="mt-3 mb-6">
         <p className="text-xs text-zinc-400">
-          申込日時: {formatDateTime(createdAt)}
+          登録日時: {formatDateTime(createdAt)}
         </p>
         <h1 className="text-xl font-semibold text-zinc-900">
           {values.name || "（未入力）"}
@@ -105,6 +127,44 @@ export function HearingDetailClient({
           </button>
         </div>
       </form>
+
+      <div className="mt-10 rounded-md border border-red-200 bg-red-50 p-4">
+        <h2 className="text-sm font-semibold text-red-800">顧客データの削除</h2>
+        <p className="mt-1 text-sm text-red-700">
+          この無料鑑定申込データを削除します。削除すると元に戻せません。
+        </p>
+        {deleteError && (
+          <p className="mt-2 text-sm font-medium text-red-700">{deleteError}</p>
+        )}
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setIsDeleteConfirmOpen(true)}
+            disabled={isDeleting}
+            className="w-full rounded-md border border-red-600 bg-white px-6 py-3 text-sm font-medium text-red-600 hover:bg-red-100 disabled:opacity-50 sm:w-auto"
+          >
+            削除する
+          </button>
+        </div>
+      </div>
+
+      {isDeleteConfirmOpen && (
+        <ConfirmDialog
+          title="顧客データの削除"
+          message={
+            <>
+              この顧客データを削除しますか？
+              <br />
+              この操作は取り消せません。
+            </>
+          }
+          confirmLabel="削除する"
+          confirmingLabel="削除中..."
+          isConfirming={isDeleting}
+          onCancel={() => setIsDeleteConfirmOpen(false)}
+          onConfirm={handleDelete}
+        />
+      )}
     </div>
   );
 }

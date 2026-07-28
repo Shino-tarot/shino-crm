@@ -166,6 +166,7 @@ export interface NormalizedHearing {
   idealFuture: string;
   memo: string;
   status: string;
+  applicationDate: string | null;
 }
 
 export type HearingValidationResult =
@@ -227,6 +228,11 @@ export function validateHearingForm(
     errors.status = "ステータスの選択内容が正しくありません。";
   }
 
+  const applicationDate = values.applicationDate.trim();
+  if (applicationDate && !isValidDateString(applicationDate)) {
+    errors.applicationDate = "申込日の形式が正しくありません。";
+  }
+
   if (Object.keys(errors).length > 0) {
     return { valid: false, errors };
   }
@@ -243,6 +249,7 @@ export function validateHearingForm(
       idealFuture,
       memo,
       status,
+      applicationDate: applicationDate || null,
     },
   };
 }

@@ -49,7 +49,10 @@ export function FreeReadingRequestTable({
         <thead className="bg-zinc-50">
           <tr>
             <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
-              申込日時
+              申込日
+            </th>
+            <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
+              登録日時
             </th>
             <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
               ステータス
@@ -95,6 +98,11 @@ export function FreeReadingRequestTable({
 
             return (
               <tr key={request.id} className="hover:bg-zinc-50">
+                <td className="whitespace-nowrap px-4 py-3 text-zinc-600">
+                  {request.applicationDate
+                    ? formatDate(request.applicationDate)
+                    : "-"}
+                </td>
                 <td className="whitespace-nowrap px-4 py-3 text-zinc-500">
                   {formatDateTime(request.createdAt)}
                 </td>

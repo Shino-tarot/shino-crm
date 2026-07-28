@@ -3,6 +3,7 @@ import {
   NormalizedFreeReadingRequest,
   NormalizedHearing,
 } from "@/lib/freeReadingRequests/validation";
+import { getTodayDateString } from "@/lib/format";
 
 export function normalizedRequestToInsertRow(data: NormalizedFreeReadingRequest) {
   return {
@@ -19,6 +20,8 @@ export function normalizedRequestToInsertRow(data: NormalizedFreeReadingRequest)
     line_name: data.lineName ?? "",
     // instagram_usernameはnullable列のため、未使用時はNULLのまま保存する
     instagram_username: data.instagramUsername,
+    // 公開フォームからの直接申込は送信日=実際の申込日のため、当日の日付を自動設定する
+    application_date: getTodayDateString(),
   };
 }
 
@@ -39,6 +42,7 @@ export interface FreeReadingRequestRow {
   instagram_username: string | null;
   memo: string;
   created_at: string;
+  application_date: string | null;
 }
 
 export interface FreeReadingRequestListItem {
@@ -58,6 +62,7 @@ export interface FreeReadingRequestListItem {
   instagramUsername: string | null;
   memo: string;
   createdAt: string;
+  applicationDate: string | null;
 }
 
 export function rowToRequestListItem(
@@ -82,6 +87,9 @@ export function rowToRequestListItem(
     // 適用前でも操作フォームが壊れないようフォールバックしておく
     memo: row.memo ?? "",
     createdAt: row.created_at,
+    // application_date列は0006マイグレーション未適用のDBだとundefinedになりうるため、
+    // 適用前でも一覧・詳細が壊れないようnullにフォールバックする
+    applicationDate: row.application_date ?? null,
   };
 }
 
@@ -104,6 +112,7 @@ export function hearingToInsertRow(data: NormalizedHearing) {
     gender: "",
     partner_gender: null,
     instagram_username: null,
+    application_date: data.applicationDate,
   };
 }
 
@@ -118,6 +127,7 @@ export function hearingToUpdateRow(data: NormalizedHearing) {
     ideal_future: data.idealFuture,
     memo: data.memo,
     status: data.status,
+    application_date: data.applicationDate,
   };
 }
 
@@ -134,5 +144,6 @@ export function rowToHearingFormValues(
     idealFuture: row.ideal_future ?? "",
     memo: row.memo ?? "",
     status: row.status,
+    applicationDate: row.application_date ?? "",
   };
 }

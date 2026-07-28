@@ -58,6 +58,9 @@ export interface HearingFormValues {
   idealFuture: string;
   memo: string;
   status: string;
+  // お客様が実際に無料鑑定へ申し込んだ日。created_at(CRM登録日時)とは役割が異なり、
+  // 未入力(空文字)も許可する
+  applicationDate: string;
 }
 
 export const EMPTY_HEARING_FORM_VALUES: HearingFormValues = {
@@ -70,4 +73,5 @@ export const EMPTY_HEARING_FORM_VALUES: HearingFormValues = {
   idealFuture: "",
   memo: "",
   status: "new",
+  applicationDate: "",
 };

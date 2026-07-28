@@ -72,6 +72,9 @@ export async function listFreeReadingRequests(): Promise<
   const { data, error } = await supabaseServerClient
     .from("free_reading_requests")
     .select("*")
+    // 申込日(application_date)の新しい順。未入力は末尾に表示し、
+    // 同一申込日内はCRM登録日時(created_at)の新しい順で安定させる
+    .order("application_date", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data as FreeReadingRequestRow[]).map(rowToRequestListItem);
@@ -143,4 +146,20 @@ export async function updateHearingRequest(
   }
 
   return { ok: true, id };
+}
+
+// 削除対象はfree_reading_requestsの該当レコードのみ。
+// customer_idはfree_reading_requests側が持つ参照(customers.id)であり、
+// customers側に本テーブルへの外部キー・カスケード設定は存在しないため、
+// この削除がcustomersのデータへ影響することはない。
+export async function deleteFreeReadingRequest(id: string): Promise<void> {
+  const { error } = await supabaseServerClient
+    .from("free_reading_requests")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("[free-reading] delete failed:", error.message);
+    throw new Error(error.message);
+  }
 }

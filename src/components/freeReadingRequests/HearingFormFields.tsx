@@ -41,6 +41,21 @@ export function HearingFormFields({
 
       <div>
         <label className="block text-sm font-medium text-zinc-700">
+          申込日
+        </label>
+        <input
+          type="date"
+          value={values.applicationDate}
+          onChange={(e) => onChange("applicationDate", e.target.value)}
+          className={inputClass}
+        />
+        {errors.applicationDate && (
+          <p className="mt-1 text-sm text-red-500">{errors.applicationDate}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-zinc-700">
           相談者名 <span className="text-red-500">*</span>
         </label>
         <input

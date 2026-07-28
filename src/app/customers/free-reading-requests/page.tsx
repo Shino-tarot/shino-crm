@@ -4,8 +4,17 @@ import { FreeReadingRequestTable } from "@/components/freeReadingRequests/FreeRe
 
 export const dynamic = "force-dynamic";
 
-export default async function FreeReadingRequestsPage() {
-  const requests = await listFreeReadingRequests();
+interface FreeReadingRequestsPageProps {
+  searchParams: Promise<{ deleted?: string }>;
+}
+
+export default async function FreeReadingRequestsPage({
+  searchParams,
+}: FreeReadingRequestsPageProps) {
+  const [requests, { deleted }] = await Promise.all([
+    listFreeReadingRequests(),
+    searchParams,
+  ]);
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
@@ -18,6 +27,13 @@ export default async function FreeReadingRequestsPage() {
           + 新規登録
         </Link>
       </div>
+
+      {deleted === "1" && (
+        <p className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+          削除しました。
+        </p>
+      )}
+
       <p className="mb-4 text-sm text-zinc-500">全{requests.length}件</p>
 
       <FreeReadingRequestTable requests={requests} />
