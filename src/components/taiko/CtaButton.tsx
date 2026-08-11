@@ -5,20 +5,29 @@ import { useSearchParams } from "next/navigation";
 
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_content"] as const;
 
-// CTA文言はLP内で統一する必要があるため、呼び出し側で個別に指定させず
-// コンポーネント側に固定する(表記ゆれ防止)。
-const CTA_LABEL = "今とこれからの流れを無料で視てもらう";
-
 type TaikoCtaLinkProps = {
   lineUrl: string;
 };
+
+// CTA文言はLP内で統一する必要があるため、呼び出し側で個別に指定させず
+// コンポーネント側に固定する(表記ゆれ防止)。ブラウザ幅による自動改行に
+// 任せず、必ず2行(視てもらう、で3行目に割れない)になるようbrで明示する。
+function CtaLabel() {
+  return (
+    <span>
+      今とこれからの流れを
+      <br />
+      無料で視てもらう
+    </span>
+  );
+}
 
 export function TaikoCtaLink({ lineUrl }: TaikoCtaLinkProps) {
   return (
     <Suspense
       fallback={
         <a href={lineUrl || "#"} className="taiko-cta">
-          <span>{CTA_LABEL}</span>
+          <CtaLabel />
         </a>
       }
     >
@@ -33,7 +42,7 @@ function TaikoCtaButton({ lineUrl }: TaikoCtaLinkProps) {
 
   return (
     <a href={href} className="taiko-cta">
-      <span>{CTA_LABEL}</span>
+      <CtaLabel />
     </a>
   );
 }
