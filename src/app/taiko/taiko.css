@@ -1,0 +1,161 @@
+.taiko-theme {
+  --taiko-bg: #fbf7ee;
+  --taiko-bg-soft: #f4ecd9;
+  --taiko-text: #2f2420;
+  --taiko-text-soft: #6b5c4f;
+  --taiko-red: #c5382f;
+  --taiko-red-deep: #8a231f;
+  --taiko-gold: #c9a24b;
+  --taiko-gold-soft: #e6d6ad;
+  --taiko-hairline: #e8ddc7;
+
+  background: var(--taiko-bg);
+  color: var(--taiko-text);
+}
+
+.taiko-theme .taiko-font {
+  font-family: var(--font-zen-maru-gothic), sans-serif;
+}
+
+.taiko-theme .taiko-accent {
+  color: var(--taiko-red-deep);
+}
+
+.taiko-theme .taiko-eyebrow {
+  display: inline-block;
+  padding: 0.35rem 1rem;
+  border: 1px solid var(--taiko-gold-soft);
+  border-radius: 9999px;
+  background: var(--taiko-bg-soft);
+  color: var(--taiko-red-deep);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+/* Scroll reveal */
+.taiko-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.9s ease,
+    transform 0.9s ease;
+}
+
+.taiko-reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .taiko-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Hero image */
+.taiko-hero-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  background: linear-gradient(
+    160deg,
+    #fff6e5 0%,
+    #f7dfae 35%,
+    #eab873 65%,
+    #d98a52 100%
+  );
+  box-shadow: 0 18px 40px -20px rgba(138, 35, 31, 0.3);
+  border: 1px solid var(--taiko-gold-soft);
+}
+
+@media (min-width: 640px) {
+  .taiko-hero-image {
+    aspect-ratio: 16 / 11;
+    border-radius: 1.75rem;
+  }
+}
+
+.taiko-hero-image-img {
+  object-fit: cover;
+}
+
+/* Wave divider */
+.taiko-wave-divider {
+  width: 72px;
+  height: 12px;
+  color: var(--taiko-gold);
+}
+
+/* Worry list */
+.taiko-worry-list li {
+  border-bottom: 1px solid var(--taiko-hairline);
+}
+
+.taiko-worry-check {
+  color: var(--taiko-red);
+}
+
+/* CTA button */
+.taiko-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 72px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1rem;
+  background: linear-gradient(
+    135deg,
+    var(--taiko-red) 0%,
+    var(--taiko-red-deep) 55%,
+    #6e1818 100%
+  );
+  border: 1px solid var(--taiko-gold);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 6px rgba(0, 0, 0, 0.25),
+    0 12px 28px -12px rgba(138, 35, 31, 0.55);
+  color: #fff8ec;
+  font-family: var(--font-zen-maru-gothic), sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.taiko-cta span {
+  position: relative;
+}
+
+.taiko-cta:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 6px rgba(0, 0, 0, 0.25),
+    0 16px 32px -12px rgba(138, 35, 31, 0.6);
+}
+
+.taiko-cta:active {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .taiko-cta {
+    transition: none;
+  }
+  .taiko-cta:hover,
+  .taiko-cta:active {
+    transform: none;
+  }
+}
