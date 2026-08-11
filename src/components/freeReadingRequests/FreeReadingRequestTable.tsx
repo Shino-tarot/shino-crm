@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { FreeReadingRequestListItem } from "@/lib/freeReadingRequests/mapper";
+import { FreeReadingRequestSearchResult } from "@/lib/freeReadingRequests/search";
 import {
   CONTACT_METHOD_LABELS,
+  DIAGNOSIS_THEME_LABELS,
   GENDER_LABELS,
   PARTNER_GENDER_LABELS,
   STATUS_LABELS,
@@ -29,16 +31,18 @@ function formatPartner(request: FreeReadingRequestListItem): string {
 }
 
 interface FreeReadingRequestTableProps {
-  requests: FreeReadingRequestListItem[];
+  results: FreeReadingRequestSearchResult[];
+  emptyMessage?: string;
 }
 
 export function FreeReadingRequestTable({
-  requests,
+  results,
+  emptyMessage = "無料鑑定の申込はまだありません。",
 }: FreeReadingRequestTableProps) {
-  if (requests.length === 0) {
+  if (results.length === 0) {
     return (
       <div className="rounded-md border border-dashed border-zinc-300 py-16 text-center text-sm text-zinc-500">
-        無料鑑定の申込はまだありません。
+        {emptyMessage}
       </div>
     );
   }
@@ -48,6 +52,12 @@ export function FreeReadingRequestTable({
       <table className="min-w-full divide-y divide-zinc-200 text-sm">
         <thead className="bg-zinc-50">
           <tr>
+            <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
+              鑑定コード
+            </th>
+            <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
+              診断テーマ
+            </th>
             <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
               申込日
             </th>
@@ -84,7 +94,7 @@ export function FreeReadingRequestTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-100 bg-white">
-          {requests.map((request) => {
+          {results.map(({ item: request, isExactCodeMatch }) => {
             const statusInfo = STATUS_LABELS[request.status] ?? {
               label: request.status,
               className: "bg-zinc-100 text-zinc-500",
@@ -97,7 +107,34 @@ export function FreeReadingRequestTable({
             };
 
             return (
-              <tr key={request.id} className="hover:bg-zinc-50">
+              <tr
+                key={request.id}
+                className={
+                  isExactCodeMatch ? "bg-violet-50 hover:bg-violet-100" : "hover:bg-zinc-50"
+                }
+              >
+                <td className="whitespace-nowrap px-4 py-3 font-mono font-medium text-zinc-900">
+                  {request.diagnosisCode ? (
+                    <Link
+                      href={`/customers/free-reading-requests/${request.id}`}
+                      className={
+                        isExactCodeMatch
+                          ? "rounded bg-violet-600 px-2 py-0.5 text-white"
+                          : "text-violet-600 hover:text-violet-800"
+                      }
+                    >
+                      {request.diagnosisCode}
+                    </Link>
+                  ) : (
+                    "-"
+                  )}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-zinc-600">
+                  {request.diagnosisTheme
+                    ? (DIAGNOSIS_THEME_LABELS[request.diagnosisTheme] ??
+                      request.diagnosisTheme)
+                    : "-"}
+                </td>
                 <td className="whitespace-nowrap px-4 py-3 text-zinc-600">
                   {request.applicationDate
                     ? formatDate(request.applicationDate)

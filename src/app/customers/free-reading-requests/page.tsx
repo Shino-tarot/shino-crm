@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { listFreeReadingRequests } from "@/lib/freeReadingRequests/actions";
-import { FreeReadingRequestTable } from "@/components/freeReadingRequests/FreeReadingRequestTable";
+import { FreeReadingRequestListView } from "@/components/freeReadingRequests/FreeReadingRequestListView";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +36,7 @@ export default async function FreeReadingRequestsPage({
 
       <p className="mb-4 text-sm text-zinc-500">全{requests.length}件</p>
 
-      <FreeReadingRequestTable requests={requests} />
+      <FreeReadingRequestListView requests={requests} />
     </div>
   );
 }

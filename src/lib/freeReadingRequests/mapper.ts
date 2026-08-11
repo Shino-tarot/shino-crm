@@ -3,7 +3,7 @@ import {
   NormalizedFreeReadingRequest,
   NormalizedHearing,
 } from "@/lib/freeReadingRequests/validation";
-import { getTodayDateString } from "@/lib/format";
+import { getTodayDateString, toDateTimeLocalInput } from "@/lib/format";
 
 export function normalizedRequestToInsertRow(data: NormalizedFreeReadingRequest) {
   return {
@@ -43,6 +43,10 @@ export interface FreeReadingRequestRow {
   memo: string;
   created_at: string;
   application_date: string | null;
+  diagnosis_code: string | null;
+  diagnosis_theme: string | null;
+  diagnosis_result_type: string | null;
+  diagnosed_at: string | null;
 }
 
 export interface FreeReadingRequestListItem {
@@ -63,6 +67,10 @@ export interface FreeReadingRequestListItem {
   memo: string;
   createdAt: string;
   applicationDate: string | null;
+  diagnosisCode: string | null;
+  diagnosisTheme: string | null;
+  diagnosisResultType: string | null;
+  diagnosedAt: string | null;
 }
 
 export function rowToRequestListItem(
@@ -90,6 +98,12 @@ export function rowToRequestListItem(
     // application_date列は0006マイグレーション未適用のDBだとundefinedになりうるため、
     // 適用前でも一覧・詳細が壊れないようnullにフォールバックする
     applicationDate: row.application_date ?? null,
+    // diagnosis_*・diagnosed_at列は0007マイグレーション未適用のDBだとundefinedになりうるため、
+    // 適用前でも一覧・詳細・検索が壊れないようnullにフォールバックする
+    diagnosisCode: row.diagnosis_code ?? null,
+    diagnosisTheme: row.diagnosis_theme ?? null,
+    diagnosisResultType: row.diagnosis_result_type ?? null,
+    diagnosedAt: row.diagnosed_at ?? null,
   };
 }
 
@@ -113,6 +127,10 @@ export function hearingToInsertRow(data: NormalizedHearing) {
     partner_gender: null,
     instagram_username: null,
     application_date: data.applicationDate,
+    diagnosis_code: data.diagnosisCode,
+    diagnosis_theme: data.diagnosisTheme,
+    diagnosis_result_type: data.diagnosisResultType,
+    diagnosed_at: data.diagnosedAt,
   };
 }
 
@@ -128,6 +146,10 @@ export function hearingToUpdateRow(data: NormalizedHearing) {
     memo: data.memo,
     status: data.status,
     application_date: data.applicationDate,
+    diagnosis_code: data.diagnosisCode,
+    diagnosis_theme: data.diagnosisTheme,
+    diagnosis_result_type: data.diagnosisResultType,
+    diagnosed_at: data.diagnosedAt,
   };
 }
 
@@ -145,5 +167,9 @@ export function rowToHearingFormValues(
     memo: row.memo ?? "",
     status: row.status,
     applicationDate: row.application_date ?? "",
+    diagnosisCode: row.diagnosis_code ?? "",
+    diagnosisTheme: row.diagnosis_theme ?? "",
+    diagnosisResultType: row.diagnosis_result_type ?? "",
+    diagnosedAt: toDateTimeLocalInput(row.diagnosed_at ?? null),
   };
 }

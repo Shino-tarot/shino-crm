@@ -110,9 +110,16 @@ export function HearingDetailClient({
         <p className="text-xs text-zinc-400">
           登録日時: {formatDateTime(createdAt)}
         </p>
-        <h1 className="text-xl font-semibold text-zinc-900">
-          {values.name || "（未入力）"}
-        </h1>
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h1 className="text-xl font-semibold text-zinc-900">
+            {values.name || "（未入力）"}
+          </h1>
+          {values.diagnosisCode && (
+            <span className="inline-block rounded bg-violet-600 px-2.5 py-1 font-mono text-sm font-bold tracking-widest text-white">
+              {values.diagnosisCode}
+            </span>
+          )}
+        </div>
       </div>
 
       <ConsultationStatsCard stats={consultationStats} />
