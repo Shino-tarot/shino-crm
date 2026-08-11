@@ -3,7 +3,7 @@ import { HeroImage } from "@/components/taiko/HeroImage";
 import { Reveal } from "@/components/taiko/Reveal";
 import { WaveDivider } from "@/components/taiko/WaveDivider";
 
-const LINE_URL = process.env.NEXT_PUBLIC_LINE_URL ?? "";
+const LINE_URL = process.env.NEXT_PUBLIC_LINE_URL_TAIKO ?? "";
 
 const WORRY_GROUPS = [
   {
@@ -59,6 +59,13 @@ export default function TaikoLandingPage() {
         </Reveal>
 
         <Reveal delayMs={200} className="mt-8">
+          <TaikoCtaLink lineUrl={LINE_URL} />
+          <p className="mt-3 text-sm text-[var(--taiko-text-soft)]">
+            あなたの福潮を無料で読み解きます
+          </p>
+        </Reveal>
+
+        <Reveal delayMs={100} className="mt-10">
           <HeroImage />
         </Reveal>
 
@@ -98,13 +105,6 @@ export default function TaikoLandingPage() {
             </p>
             <p className="mt-6">心を込めて読み解きます。</p>
           </div>
-        </Reveal>
-
-        <Reveal delayMs={100} className="mt-10">
-          <TaikoCtaLink lineUrl={LINE_URL} />
-          <p className="mt-3 text-sm text-[var(--taiko-text-soft)]">
-            あなたの福潮を無料で読み解きます
-          </p>
         </Reveal>
       </section>
 
