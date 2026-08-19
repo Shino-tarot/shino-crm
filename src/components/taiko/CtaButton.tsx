@@ -12,12 +12,15 @@ type TaikoCtaLinkProps = {
 // CTA文言はLP内で統一する必要があるため、呼び出し側で個別に指定させず
 // コンポーネント側に固定する(表記ゆれ防止)。ブラウザ幅による自動改行に
 // 任せず、必ず2行(視てもらう、で3行目に割れない)になるようbrで明示する。
-function CtaLabel() {
+// 「無料」のみゴールドで強調するため個別spanに分割している。
+export function CtaLabel() {
   return (
-    <span>
-      今とこれからの流れを
+    <span className="taiko-cta-text">
+      <span className="taiko-cta-line">今とこれからの流れを</span>
       <br />
-      無料で視てもらう
+      <span className="taiko-cta-line">
+        <span className="taiko-cta-free">無料</span>で視てもらう
+      </span>
     </span>
   );
 }
@@ -28,6 +31,9 @@ export function TaikoCtaLink({ lineUrl }: TaikoCtaLinkProps) {
       fallback={
         <a href={lineUrl || "#"} className="taiko-cta">
           <CtaLabel />
+          <span aria-hidden="true" className="taiko-cta-arrow">
+            ＞
+          </span>
         </a>
       }
     >
@@ -37,14 +43,22 @@ export function TaikoCtaLink({ lineUrl }: TaikoCtaLinkProps) {
 }
 
 function TaikoCtaButton({ lineUrl }: TaikoCtaLinkProps) {
-  const searchParams = useSearchParams();
-  const href = buildHref(lineUrl, searchParams);
+  const href = useTaikoCtaHref(lineUrl);
 
   return (
     <a href={href} className="taiko-cta">
       <CtaLabel />
+      <span aria-hidden="true" className="taiko-cta-arrow">
+        ＞
+      </span>
     </a>
   );
+}
+
+// 通常CTAと追従CTAで同じUTM転送ロジックを使うための共有フック。
+export function useTaikoCtaHref(lineUrl: string) {
+  const searchParams = useSearchParams();
+  return buildHref(lineUrl, searchParams);
 }
 
 function buildHref(

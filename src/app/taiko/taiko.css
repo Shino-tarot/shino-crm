@@ -4,13 +4,46 @@
   --taiko-text: #2f2420;
   --taiko-text-soft: #6b5c4f;
   --taiko-red: #c5382f;
+  --taiko-red-bright: #d9483c;
+  --taiko-red-vivid: #e6432f;
   --taiko-red-deep: #8a231f;
+  --taiko-red-shadow: #591511;
   --taiko-gold: #c9a24b;
+  --taiko-gold-strong: #d6ab3e;
   --taiko-gold-soft: #e6d6ad;
+  --taiko-gold-light: #f6e6bd;
   --taiko-hairline: #e8ddc7;
 
-  background: var(--taiko-bg);
+  position: relative;
+  background-color: var(--taiko-bg);
+  background-image:
+    radial-gradient(circle at 10% 4%, rgba(201, 162, 75, 0.26), transparent 44%),
+    radial-gradient(circle at 92% 10%, rgba(197, 56, 47, 0.15), transparent 46%),
+    radial-gradient(circle at 50% 26%, rgba(201, 162, 75, 0.16), transparent 58%),
+    radial-gradient(circle at 16% 68%, rgba(201, 162, 75, 0.12), transparent 50%),
+    radial-gradient(circle at 88% 86%, rgba(197, 56, 47, 0.1), transparent 48%),
+    repeating-linear-gradient(
+      120deg,
+      rgba(201, 162, 75, 0.06) 0px,
+      rgba(201, 162, 75, 0.06) 1px,
+      transparent 1px,
+      transparent 58px
+    );
   color: var(--taiko-text);
+  isolation: isolate;
+}
+
+/* 薄い和紙のような質感(外部画像を使わずSVGフィルタで生成した極薄ノイズ) */
+.taiko-theme::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.7;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0.6  0 0 0 0 0.47  0 0 0 0 0.27  0 0 0 0.07 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 140px 140px;
 }
 
 .taiko-theme .taiko-font {
@@ -21,16 +54,105 @@
   color: var(--taiko-red-deep);
 }
 
+/* ファーストビューの「福の潮」だけを目立たせる強調見出し */
+.taiko-theme .taiko-hero-highlight {
+  display: inline-block;
+  margin: 0.1em 0;
+  font-size: 1.4em;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--taiko-red-deep);
+  background: linear-gradient(180deg, var(--taiko-red-vivid) 0%, var(--taiko-red-deep) 78%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 6px 26px rgba(197, 56, 47, 0.28);
+}
+
+/* 数値など、キーワードを本文中で強調する用途(赤系) */
+.taiko-theme .taiko-num-highlight {
+  color: var(--taiko-red-deep);
+  font-weight: 700;
+}
+
+/* 通常のカテゴリラベル・受付中ラベルなど(控えめな金縁ピル) */
 .taiko-theme .taiko-eyebrow {
   display: inline-block;
-  padding: 0.35rem 1rem;
-  border: 1px solid var(--taiko-gold-soft);
+  padding: 0.4rem 1.1rem;
+  border: 1.5px solid var(--taiko-gold-strong);
   border-radius: 9999px;
-  background: var(--taiko-bg-soft);
+  background: linear-gradient(180deg, #fffdf7 0%, var(--taiko-bg-soft) 100%);
   color: var(--taiko-red-deep);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.06em;
+  box-shadow: 0 3px 12px -6px rgba(138, 35, 31, 0.4);
+}
+
+/* ファーストビューの実績バッジ(赤×金のリボン風) */
+.taiko-theme .taiko-badge-achievement {
+  position: relative;
+  display: inline-block;
+  padding: 0.6rem 1.4rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, var(--taiko-red-vivid) 0%, var(--taiko-red) 45%, var(--taiko-red-deep) 100%);
+  border: 1.5px solid var(--taiko-gold-strong);
+  color: #fff8ec;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    0 12px 28px -12px rgba(138, 35, 31, 0.6),
+    0 0 0 5px rgba(201, 162, 75, 0.2);
+}
+
+.taiko-theme .taiko-badge-number {
+  color: var(--taiko-gold-light);
+  font-weight: 800;
+  font-size: 1.05em;
+  letter-spacing: 0.02em;
+}
+
+/* 「福を届ける占い師です」の下、恋愛/仕事/金運/人間関係の小バッジ */
+.taiko-theme .taiko-badge-category {
+  display: inline-block;
+  padding: 0.35rem 0.9rem;
+  border-radius: 9999px;
+  border: 1px solid var(--taiko-gold-soft);
+  background: var(--taiko-bg-soft);
+  color: var(--taiko-text-soft);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* セクション見出し: 左右に細いゴールドラインを添える */
+.taiko-theme .taiko-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85em;
+}
+
+.taiko-theme .taiko-title-line {
+  position: relative;
+  flex: 1 1 24px;
+  max-width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--taiko-gold-strong), transparent);
+  box-shadow: 0 0 6px rgba(201, 162, 75, 0.4);
+}
+
+.taiko-theme .taiko-title-line::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: linear-gradient(135deg, var(--taiko-gold-light), var(--taiko-red));
+  box-shadow: 0 0 5px rgba(197, 56, 47, 0.45);
 }
 
 /* Scroll reveal */
@@ -69,8 +191,12 @@
     #eab873 65%,
     #d98a52 100%
   );
-  box-shadow: 0 18px 40px -20px rgba(138, 35, 31, 0.3);
-  border: 1px solid var(--taiko-gold-soft);
+  border: 2px solid var(--taiko-gold);
+  box-shadow:
+    0 0 0 6px rgba(251, 247, 238, 0.92),
+    0 0 0 7px var(--taiko-gold-soft),
+    0 24px 48px -20px rgba(138, 35, 31, 0.35),
+    0 0 60px -12px rgba(201, 162, 75, 0.4);
 }
 
 @media (min-width: 640px) {
@@ -90,9 +216,10 @@
 
 /* Wave divider */
 .taiko-wave-divider {
-  width: 72px;
-  height: 12px;
-  color: var(--taiko-gold);
+  width: 88px;
+  height: 15px;
+  color: var(--taiko-gold-strong);
+  filter: drop-shadow(0 1px 3px rgba(201, 162, 75, 0.4));
 }
 
 /* Worry list */
@@ -102,34 +229,76 @@
 
 .taiko-worry-check {
   color: var(--taiko-red);
+  font-weight: 700;
 }
 
-/* CTA button */
+/* 悩み・特徴などをまとめるカード */
+.taiko-theme .taiko-card {
+  position: relative;
+  background: linear-gradient(180deg, #fffdf7 0%, var(--taiko-bg) 100%);
+  border: 2px solid var(--taiko-gold);
+  border-radius: 1.1rem;
+  padding: 1.65rem 1.25rem 1.4rem;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 14px 30px -20px rgba(138, 35, 31, 0.32),
+    0 0 0 1px rgba(201, 162, 75, 0.18);
+}
+
+.taiko-theme .taiko-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--taiko-red) 0%,
+    var(--taiko-gold-strong) 50%,
+    var(--taiko-red) 100%
+  );
+}
+
+.taiko-theme .taiko-card .taiko-worry-list li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* CTA button (通常CTA・追従CTA共通) */
 .taiko-cta {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0.7rem;
   width: 100%;
-  min-height: 72px;
-  padding: 0.75rem 1.5rem;
-  border-radius: 1rem;
+  max-width: 30rem;
+  margin-inline: auto;
+  min-height: 88px;
+  padding: 0.9rem 0.7rem 0.9rem 1.2rem;
+  border-radius: 1.2rem;
   background: linear-gradient(
     135deg,
-    var(--taiko-red) 0%,
-    var(--taiko-red-deep) 55%,
-    #6e1818 100%
+    var(--taiko-red-vivid) 0%,
+    var(--taiko-red) 42%,
+    var(--taiko-red-deep) 78%,
+    var(--taiko-red-shadow) 100%
   );
-  border: 1px solid var(--taiko-gold);
+  border: 2px solid var(--taiko-gold-strong);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 -1px 6px rgba(0, 0, 0, 0.25),
-    0 12px 28px -12px rgba(138, 35, 31, 0.55);
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 -1px 7px rgba(0, 0, 0, 0.28),
+    0 16px 34px -14px rgba(138, 35, 31, 0.68),
+    0 0 0 1.5px rgba(201, 162, 75, 0.35),
+    0 0 34px -2px rgba(201, 162, 75, 0.55);
   color: #fff8ec;
   font-family: var(--font-zen-maru-gothic), sans-serif;
-  font-weight: 700;
-  font-size: 1.25rem;
-  line-height: 1.4;
-  letter-spacing: 0.02em;
+  font-weight: 800;
+  font-size: clamp(1.3rem, 5.6vw, 1.5rem);
+  line-height: 1.45;
+  letter-spacing: 0;
   text-align: center;
   text-decoration: none;
   transition:
@@ -138,20 +307,58 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.taiko-cta span {
+.taiko-cta-text {
+  flex: 1 1 auto;
+}
+
+.taiko-cta-line {
   position: relative;
 }
 
-.taiko-cta:hover {
-  transform: translateY(-2px);
+.taiko-cta-free {
+  display: inline-block;
+  color: var(--taiko-gold-light);
+  font-weight: 800;
+  font-size: 1.15em;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+}
+
+.taiko-cta-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #fffaf0 0%, #fbeecb 100%);
+  border: 1.5px solid var(--taiko-gold-strong);
+  color: var(--taiko-red-deep);
+  font-weight: 800;
+  font-size: 1.2rem;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    inset 0 -1px 6px rgba(0, 0, 0, 0.25),
-    0 16px 32px -12px rgba(138, 35, 31, 0.6);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .taiko-cta:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.28),
+      inset 0 -1px 7px rgba(0, 0, 0, 0.28),
+      0 20px 40px -14px rgba(138, 35, 31, 0.72),
+      0 0 0 1.5px rgba(201, 162, 75, 0.4),
+      0 0 40px 0px rgba(201, 162, 75, 0.65);
+  }
 }
 
 .taiko-cta:active {
-  transform: translateY(0);
+  transform: scale(0.97);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 6px rgba(0, 0, 0, 0.25),
+    0 8px 18px -10px rgba(138, 35, 31, 0.55);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -161,5 +368,71 @@
   .taiko-cta:hover,
   .taiko-cta:active {
     transform: none;
+  }
+}
+
+/* スマートフォン追従CTA */
+.taiko-sticky-cta {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: none;
+  justify-content: center;
+  padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom));
+  background: linear-gradient(
+    180deg,
+    rgba(251, 247, 238, 0) 0%,
+    rgba(251, 247, 238, 0.94) 40%,
+    rgba(251, 247, 238, 0.98) 100%
+  );
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+
+.taiko-sticky-cta-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.taiko-cta-sticky {
+  min-height: 72px;
+  padding: 0.65rem 0.6rem 0.65rem 1rem;
+  border-radius: 1rem;
+  font-size: clamp(1.1rem, 4.6vw, 1.25rem);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 -1px 7px rgba(0, 0, 0, 0.28),
+    0 10px 26px -10px rgba(138, 35, 31, 0.7),
+    0 0 0 1.5px rgba(201, 162, 75, 0.4),
+    0 0 26px -2px rgba(201, 162, 75, 0.55);
+}
+
+.taiko-cta-sticky .taiko-cta-arrow {
+  width: 2.15rem;
+  height: 2.15rem;
+  font-size: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .taiko-sticky-cta {
+    transition: none;
+  }
+}
+
+@media (max-width: 639.98px) {
+  .taiko-sticky-cta {
+    display: flex;
+  }
+
+  /* 追従CTA分の余白を確保し、最下部のコンテンツが隠れないようにする */
+  .taiko-theme .taiko-main {
+    padding-bottom: calc(7.25rem + env(safe-area-inset-bottom));
   }
 }

@@ -12,7 +12,7 @@ export function WaveDivider() {
         d="M0 8 C 15 0, 25 16, 40 8 S 65 0, 80 8 S 105 16, 120 8"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="2"
         strokeLinecap="round"
       />
     </svg>

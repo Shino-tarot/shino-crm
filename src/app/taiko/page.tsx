@@ -1,6 +1,7 @@
 import { TaikoCtaLink } from "@/components/taiko/CtaButton";
 import { HeroImage } from "@/components/taiko/HeroImage";
 import { Reveal } from "@/components/taiko/Reveal";
+import { StickyCta } from "@/components/taiko/StickyCta";
 import { WaveDivider } from "@/components/taiko/WaveDivider";
 
 const LINE_URL = process.env.NEXT_PUBLIC_LINE_URL_TAIKO ?? "";
@@ -42,18 +43,22 @@ const WORRY_GROUPS = [
 
 export default function TaikoLandingPage() {
   return (
-    <main className="mx-auto min-h-full max-w-md px-5 pb-16 pt-12 sm:max-w-lg sm:px-6">
+    <>
+      <main className="taiko-main mx-auto min-h-full max-w-md px-5 pb-16 pt-12 sm:max-w-lg sm:px-6">
       {/* 1. ファーストビュー */}
       <section className="text-center">
         <Reveal>
-          <p className="taiko-eyebrow">累計鑑定1,000件以上｜福潮読み 無料鑑定</p>
+          <p className="taiko-badge-achievement">
+            累計鑑定<span className="taiko-badge-number">1,000件以上</span>
+            ｜福潮読み 無料鑑定
+          </p>
         </Reveal>
 
         <Reveal delayMs={100} className="mt-5">
           <h1 className="text-2xl leading-relaxed font-bold tracking-wide sm:text-3xl">
             今のあなたに流れる
             <br />
-            <span className="taiko-accent">「福の潮」</span>
+            <span className="taiko-hero-highlight">「福の潮」</span>
             を読み解きます
           </h1>
         </Reveal>
@@ -64,6 +69,8 @@ export default function TaikoLandingPage() {
             あなたの福潮を無料で読み解きます
           </p>
         </Reveal>
+
+        <div id="taiko-first-cta-sentinel" aria-hidden="true" />
 
         <Reveal delayMs={100} className="mt-10">
           <HeroImage />
@@ -111,13 +118,22 @@ export default function TaikoLandingPage() {
       {/* 2. 具体的な悩み提示 */}
       <Reveal className="mt-24">
         <section aria-labelledby="worries-heading" className="text-center">
-          <h2 id="worries-heading" className="text-xl font-bold tracking-wide sm:text-2xl">
-            こんなこと、知りたくありませんか？
+          <div className="flex justify-center text-[var(--taiko-gold)]">
+            <WaveDivider />
+          </div>
+
+          <h2
+            id="worries-heading"
+            className="taiko-section-title mt-4 text-xl font-bold tracking-wide sm:text-2xl"
+          >
+            <span aria-hidden="true" className="taiko-title-line" />
+            <span>こんなこと、知りたくありませんか？</span>
+            <span aria-hidden="true" className="taiko-title-line" />
           </h2>
 
           <div className="mt-10 space-y-10 text-left">
             {WORRY_GROUPS.map((group) => (
-              <div key={group.title}>
+              <div key={group.title} className="taiko-card">
                 <p className="taiko-eyebrow">{group.title}</p>
                 <ul className="taiko-worry-list mt-4 space-y-4">
                   {group.items.map((item) => (
@@ -157,9 +173,11 @@ export default function TaikoLandingPage() {
 
           <h2
             id="about-fukushio-heading"
-            className="mt-4 text-xl font-bold tracking-wide sm:text-2xl"
+            className="taiko-section-title mt-4 text-xl font-bold tracking-wide sm:text-2xl"
           >
-            福潮読みとは？
+            <span aria-hidden="true" className="taiko-title-line" />
+            <span>福潮読みとは？</span>
+            <span aria-hidden="true" className="taiko-title-line" />
           </h2>
 
           <div className="mt-8 text-base leading-loose text-[var(--taiko-text-soft)] sm:text-lg">
@@ -188,7 +206,7 @@ export default function TaikoLandingPage() {
             </p>
           </div>
 
-          <div className="mt-8 text-left">
+          <div className="taiko-card mt-8 text-left">
             <p className="text-center leading-loose">福潮読みでは、</p>
             <ul className="taiko-worry-list mt-4 space-y-4">
               {[
@@ -217,8 +235,17 @@ export default function TaikoLandingPage() {
       {/* 4. 鯛子について */}
       <Reveal className="mt-24">
         <section aria-labelledby="about-taiko-heading" className="text-center">
-          <h2 id="about-taiko-heading" className="text-xl font-bold tracking-wide sm:text-2xl">
-            はじめまして、鯛子です。
+          <div className="flex justify-center text-[var(--taiko-gold)]">
+            <WaveDivider />
+          </div>
+
+          <h2
+            id="about-taiko-heading"
+            className="taiko-section-title mt-4 text-xl font-bold tracking-wide sm:text-2xl"
+          >
+            <span aria-hidden="true" className="taiko-title-line" />
+            <span>はじめまして、鯛子です。</span>
+            <span aria-hidden="true" className="taiko-title-line" />
           </h2>
           <p className="taiko-eyebrow mt-4">福を届ける占い師</p>
 
@@ -233,16 +260,15 @@ export default function TaikoLandingPage() {
             <p className="mt-6">
               私は、その福を人へ届ける役目を授かり、
               <br />
-              これまで累計1,000名以上の方の
+              これまで累計<span className="taiko-num-highlight">1,000名以上</span>
+              の方の
             </p>
-            <p className="mt-6 text-[var(--taiko-text-soft)]">
-              恋愛
-              <br />
-              仕事
-              <br />
-              金運
-              <br />
-              人間関係
+            <p className="mt-6 flex flex-wrap items-center justify-center gap-2">
+              {["恋愛", "仕事", "金運", "人間関係"].map((word) => (
+                <span key={word} className="taiko-badge-category">
+                  {word}
+                </span>
+              ))}
             </p>
             <p className="mt-6">を読み解いてきました。</p>
             <p className="mt-6">
@@ -279,10 +305,14 @@ export default function TaikoLandingPage() {
           <WaveDivider />
         </div>
 
-        <h2 className="mt-4 text-xl font-bold tracking-wide sm:text-2xl">
-          あなたの福は、
-          <br />
-          ここから巡り始めます
+        <h2 className="taiko-section-title mt-4 text-xl font-bold tracking-wide sm:text-2xl">
+          <span aria-hidden="true" className="taiko-title-line" />
+          <span>
+            あなたの福は、
+            <br />
+            ここから巡り始めます
+          </span>
+          <span aria-hidden="true" className="taiko-title-line" />
         </h2>
 
         <div className="mt-8 text-base leading-loose sm:text-lg">
@@ -315,6 +345,8 @@ export default function TaikoLandingPage() {
           <TaikoCtaLink lineUrl={LINE_URL} />
         </div>
       </Reveal>
-    </main>
+      </main>
+      <StickyCta lineUrl={LINE_URL} />
+    </>
   );
 }
