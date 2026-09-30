@@ -1,6 +1,5 @@
 import {
   ContactMethod,
-  DIAGNOSIS_THEME_VALUES,
   FreeReadingFormValues,
   GENDER_OPTIONS,
   HearingFormValues,
@@ -15,27 +14,23 @@ export const INSTAGRAM_USERNAME_MAX_LENGTH = 30;
 export const CONTENT_MAX_LENGTH = 2000;
 export const IDEAL_FUTURE_MAX_LENGTH = 2000;
 export const MEMO_MAX_LENGTH = 2000;
-export const DIAGNOSIS_RESULT_TYPE_MAX_LENGTH = 100;
+export const SENT_READING_CONTENT_MAX_LENGTH = 20000;
 
 const INSTAGRAM_USERNAME_PATTERN = /^[A-Za-z0-9._]+$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DATETIME_LOCAL_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
-// 鑑定コードの現行運用ルール(4〜6桁の数字文字列)。DB側にはCHECK制約を設けていないため
-// (将来コード体系が英数字混在等へ変わる可能性を考慮)、このパターンのみで検証する
-const DIAGNOSIS_CODE_PATTERN = /^[0-9]{4,6}$/;
 const GENDER_VALUES = GENDER_OPTIONS.map((option) => option.value) as readonly string[];
 const PARTNER_GENDER_VALUES = PARTNER_GENDER_OPTIONS.map(
   (option) => option.value,
 ) as readonly string[];
-// 既存ステータス(new/contacted/converted/archived)に加え、
-// 診断Webアプリ連携後の進行管理ステータスを許可する(DBのCHECK制約と合わせる)
+// 診断Webアプリ連携の撤去に伴い、診断専用ステータス(diagnosis_completed /
+// awaiting_line_registration)は許可しない。CRMの鑑定進行管理として使う
+// ステータスのみ残す(DBのCHECK制約と合わせる)。
 const HEARING_STATUS_VALUES = [
   "new",
   "contacted",
   "converted",
   "archived",
-  "diagnosis_completed",
-  "awaiting_line_registration",
   "awaiting_free_reading",
   "in_reading",
   "free_reading_sent",
@@ -188,11 +183,9 @@ export interface NormalizedHearing {
   memo: string;
   status: string;
   applicationDate: string | null;
-  diagnosisCode: string | null;
-  diagnosisTheme: string | null;
-  diagnosisResultType: string | null;
+  sentReadingContent: string | null;
   // ISO文字列(UTC)。datetime-local入力からfromJstDateTimeLocalで変換済み
-  diagnosedAt: string | null;
+  sentAt: string | null;
 }
 
 export type HearingValidationResult =
@@ -259,24 +252,14 @@ export function validateHearingForm(
     errors.applicationDate = "申込日の形式が正しくありません。";
   }
 
-  const diagnosisCode = values.diagnosisCode.trim();
-  if (diagnosisCode && !DIAGNOSIS_CODE_PATTERN.test(diagnosisCode)) {
-    errors.diagnosisCode = "鑑定コードは4〜6桁の数字で入力してください。";
+  const sentReadingContent = values.sentReadingContent.trim();
+  if (sentReadingContent.length > SENT_READING_CONTENT_MAX_LENGTH) {
+    errors.sentReadingContent = `送付した無料鑑定文は${SENT_READING_CONTENT_MAX_LENGTH}文字以内で入力してください。`;
   }
 
-  const diagnosisTheme = values.diagnosisTheme.trim();
-  if (diagnosisTheme && !DIAGNOSIS_THEME_VALUES.includes(diagnosisTheme)) {
-    errors.diagnosisTheme = "診断テーマの選択内容が正しくありません。";
-  }
-
-  const diagnosisResultType = values.diagnosisResultType.trim();
-  if (diagnosisResultType.length > DIAGNOSIS_RESULT_TYPE_MAX_LENGTH) {
-    errors.diagnosisResultType = `診断結果タイプは${DIAGNOSIS_RESULT_TYPE_MAX_LENGTH}文字以内で入力してください。`;
-  }
-
-  const diagnosedAtInput = values.diagnosedAt.trim();
-  if (diagnosedAtInput && !DATETIME_LOCAL_PATTERN.test(diagnosedAtInput)) {
-    errors.diagnosedAt = "診断日時の形式が正しくありません。";
+  const sentAtInput = values.sentAt.trim();
+  if (sentAtInput && !DATETIME_LOCAL_PATTERN.test(sentAtInput)) {
+    errors.sentAt = "送付日時の形式が正しくありません。";
   }
 
   if (Object.keys(errors).length > 0) {
@@ -296,10 +279,8 @@ export function validateHearingForm(
       memo,
       status,
       applicationDate: applicationDate || null,
-      diagnosisCode: diagnosisCode || null,
-      diagnosisTheme: diagnosisTheme || null,
-      diagnosisResultType: diagnosisResultType || null,
-      diagnosedAt: diagnosedAtInput ? fromJstDateTimeLocal(diagnosedAtInput) : null,
+      sentReadingContent: sentReadingContent || null,
+      sentAt: sentAtInput ? fromJstDateTimeLocal(sentAtInput) : null,
     },
   };
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { HearingFormValues, DIAGNOSIS_THEMES } from "@/types/freeReadingRequest";
+import { HearingFormValues } from "@/types/freeReadingRequest";
 import { STATUS_OPTIONS } from "@/lib/freeReadingRequests/labels";
+import { CopyButton } from "@/components/ui/CopyButton";
 
 interface HearingFormFieldsProps {
   values: HearingFormValues;
@@ -27,85 +28,6 @@ export function HearingFormFields({
 }: HearingFormFieldsProps) {
   return (
     <div className="space-y-8">
-      {/* 診断情報 */}
-      <div className="space-y-4">
-        <h2 className={sectionHeadingClass}>診断情報</h2>
-
-        <div>
-          <label className="block text-sm font-medium text-zinc-700">
-            鑑定コード
-          </label>
-          <input
-            type="text"
-            inputMode="numeric"
-            value={values.diagnosisCode}
-            onChange={(e) => onChange("diagnosisCode", e.target.value)}
-            placeholder="例：5626"
-            className={`${inputClass} font-mono tracking-widest`}
-          />
-          <p className="mt-1 text-xs text-zinc-400">
-            診断Webアプリ発行の4〜6桁のコード。LINEで届いたコードで検索できます。
-          </p>
-          {errors.diagnosisCode && (
-            <p className="mt-1 text-sm text-red-500">{errors.diagnosisCode}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-zinc-700">
-            診断日時
-          </label>
-          <input
-            type="datetime-local"
-            value={values.diagnosedAt}
-            onChange={(e) => onChange("diagnosedAt", e.target.value)}
-            className={inputClass}
-          />
-          {errors.diagnosedAt && (
-            <p className="mt-1 text-sm text-red-500">{errors.diagnosedAt}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-zinc-700">
-            診断テーマ
-          </label>
-          <select
-            value={values.diagnosisTheme}
-            onChange={(e) => onChange("diagnosisTheme", e.target.value)}
-            className={inputClass}
-          >
-            <option value="">未選択</option>
-            {DIAGNOSIS_THEMES.map((theme) => (
-              <option key={theme.value} value={theme.value}>
-                {theme.label}
-              </option>
-            ))}
-          </select>
-          {errors.diagnosisTheme && (
-            <p className="mt-1 text-sm text-red-500">{errors.diagnosisTheme}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-zinc-700">
-            診断結果タイプ
-          </label>
-          <input
-            type="text"
-            value={values.diagnosisResultType}
-            onChange={(e) => onChange("diagnosisResultType", e.target.value)}
-            placeholder="例：黄金満ち潮"
-            className={inputClass}
-          />
-          {errors.diagnosisResultType && (
-            <p className="mt-1 text-sm text-red-500">
-              {errors.diagnosisResultType}
-            </p>
-          )}
-        </div>
-      </div>
-
       {/* お客様情報 */}
       <div className="space-y-4">
         <h2 className={sectionHeadingClass}>お客様情報</h2>
@@ -120,9 +42,6 @@ export function HearingFormFields({
             onChange={(e) => onChange("lineName", e.target.value)}
             className={inputClass}
           />
-          <p className="mt-1 text-xs text-zinc-400">
-            診断Webアプリ経由の登録直後は未入力です。LINE登録後に入力してください。
-          </p>
           {errors.lineName && (
             <p className="mt-1 text-sm text-red-500">{errors.lineName}</p>
           )}
@@ -227,6 +146,49 @@ export function HearingFormFields({
           />
           {errors.idealFuture && (
             <p className="mt-1 text-sm text-red-500">{errors.idealFuture}</p>
+          )}
+        </div>
+      </div>
+
+      {/* 送付した無料鑑定文 */}
+      <div className="space-y-4">
+        <h2 className={sectionHeadingClass}>送付した無料鑑定文</h2>
+
+        <div>
+          <div className="flex items-center justify-between">
+            <label className="block text-sm font-medium text-zinc-700">
+              無料鑑定文
+            </label>
+            {values.sentReadingContent && (
+              <CopyButton text={values.sentReadingContent} />
+            )}
+          </div>
+          <textarea
+            value={values.sentReadingContent}
+            onChange={(e) => onChange("sentReadingContent", e.target.value)}
+            rows={12}
+            placeholder="実際にお客様へ送付した無料鑑定文を貼り付けて保存できます"
+            className={inputClass}
+          />
+          {errors.sentReadingContent && (
+            <p className="mt-1 text-sm text-red-500">
+              {errors.sentReadingContent}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-zinc-700">
+            送付日時
+          </label>
+          <input
+            type="datetime-local"
+            value={values.sentAt}
+            onChange={(e) => onChange("sentAt", e.target.value)}
+            className={inputClass}
+          />
+          {errors.sentAt && (
+            <p className="mt-1 text-sm text-red-500">{errors.sentAt}</p>
           )}
         </div>
       </div>

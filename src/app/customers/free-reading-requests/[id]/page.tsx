@@ -8,7 +8,13 @@ import {
   rowToRequestListItem,
 } from "@/lib/freeReadingRequests/mapper";
 import { computeConsultationStats } from "@/lib/freeReadingRequests/consultationStats";
+import { getCustomerSummary } from "@/lib/customers/summary";
+import { listPaidReadings } from "@/lib/paidReadings/actions";
+import { listUpsellPurchases } from "@/lib/upsellPurchases/actions";
 import { HearingDetailClient } from "@/components/freeReadingRequests/HearingDetailClient";
+import { CustomerSummary } from "@/types/customerSummary";
+import { PaidReading } from "@/types/paidReading";
+import { UpsellPurchase } from "@/types/upsellPurchase";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +55,19 @@ export default async function HearingDetailPage({
     history,
   );
 
+  const customerId = row.customer_id;
+  let customerSummary: CustomerSummary | null = null;
+  let paidReadings: PaidReading[] = [];
+  let upsellPurchases: UpsellPurchase[] = [];
+
+  if (customerId) {
+    [customerSummary, paidReadings, upsellPurchases] = await Promise.all([
+      getCustomerSummary(customerId),
+      listPaidReadings(customerId),
+      listUpsellPurchases(customerId),
+    ]);
+  }
+
   return (
     <HearingDetailClient
       id={id}
@@ -56,6 +75,10 @@ export default async function HearingDetailPage({
       createdAt={listItem.createdAt}
       history={history}
       consultationStats={consultationStats}
+      customerId={customerId}
+      customerSummary={customerSummary}
+      paidReadings={paidReadings}
+      upsellPurchases={upsellPurchases}
     />
   );
 }

@@ -14,6 +14,7 @@ import {
   normalizedRequestToInsertRow,
   rowToRequestListItem,
 } from "@/lib/freeReadingRequests/mapper";
+import { createCustomerForNewApplication } from "@/lib/customers/linking";
 
 const MIN_ELAPSED_MS = 2000;
 
@@ -27,6 +28,26 @@ export interface SubmitFreeReadingRequestMeta {
 export type SubmitFreeReadingRequestResult =
   | { ok: true }
   | { ok: false; errors: Record<string, string> };
+
+// 新規の無料鑑定申込を保存する直前に顧客(customers)を1件自動作成し、customer_idを
+// 紐付ける。既存customersへの自動統合は行わない(LINE表示名等による誤マージ事故を
+// 避けるため、常に新規作成のみ)。万一顧客作成に失敗しても、本来の申込保存自体は
+// 継続できるよう、customer_id=nullにフォールバックする(後からスタッフが手動で
+// 「顧客として登録する」操作を行える)。
+async function createCustomerSafely(seed: {
+  lineName: string;
+  readingName: string;
+  birthDate: string | null;
+  gender: string | null;
+  age: number | null;
+}): Promise<string | null> {
+  try {
+    return await createCustomerForNewApplication(seed);
+  } catch (error) {
+    console.error("[customers] auto create failed:", error);
+    return null;
+  }
+}
 
 export async function submitFreeReadingRequest(
   values: FreeReadingFormValues,
@@ -51,9 +72,18 @@ export async function submitFreeReadingRequest(
     return { ok: false, errors: result.errors };
   }
 
-  const { error } = await supabaseServerClient
-    .from("free_reading_requests")
-    .insert(normalizedRequestToInsertRow(result.data));
+  const customerId = await createCustomerSafely({
+    lineName: result.data.lineName ?? "",
+    readingName: result.data.name,
+    birthDate: result.data.birthDate,
+    gender: result.data.gender,
+    age: null,
+  });
+
+  const { error } = await supabaseServerClient.from("free_reading_requests").insert({
+    ...normalizedRequestToInsertRow(result.data),
+    customer_id: customerId,
+  });
 
   if (error) {
     console.error("[free-reading] insert failed:", error.message);
@@ -101,6 +131,8 @@ function escapeLikePattern(value: string): string {
 // line_nameは前後空白や大文字小文字の違いで別人扱いにならないよう、
 // DB側ではilikeで緩めに絞り込み、最終的な同一判定はJS側でtrim+小文字化した完全一致で行う
 // (部分一致のレコードが誤って履歴に含まれないようにするため)。
+// これはあくまで「候補表示」であり、実際に同一顧客として扱うかはスタッフが
+// 「同じ顧客として紐付ける」操作で明示的に判断する(customer_idの自動統合はしない)。
 export async function listFreeReadingRequestHistory(
   lineName: string,
   excludeId: string,
@@ -128,7 +160,8 @@ export type SaveHearingResult =
   | { ok: false; errors: Record<string, string> };
 
 // LINEでのヒアリングを管理画面から手動登録する(公開フォーム経由ではないため
-// honeypot等のスパム対策は不要)。
+// honeypot等のスパム対策は不要)。公開フォーム同様、新規申込のため顧客を
+// 自動作成してcustomer_idを紐付ける(既存customersへの自動統合はしない)。
 export async function createHearingRequest(
   values: HearingFormValues,
 ): Promise<SaveHearingResult> {
@@ -137,9 +170,17 @@ export async function createHearingRequest(
     return { ok: false, errors: result.errors };
   }
 
+  const customerId = await createCustomerSafely({
+    lineName: result.data.lineName,
+    readingName: result.data.name,
+    birthDate: result.data.birthDate,
+    gender: null,
+    age: null,
+  });
+
   const { data, error } = await supabaseServerClient
     .from("free_reading_requests")
-    .insert(hearingToInsertRow(result.data))
+    .insert({ ...hearingToInsertRow(result.data), customer_id: customerId })
     .select("id")
     .single();
 
@@ -154,6 +195,8 @@ export async function createHearingRequest(
   return { ok: true, id: data.id };
 }
 
+// 既存申込の編集では顧客の自動作成・自動統合は行わない
+// (未紐付けの場合は「顧客として登録する」操作をスタッフが明示的に行う)。
 export async function updateHearingRequest(
   id: string,
   values: HearingFormValues,
@@ -182,7 +225,8 @@ export async function updateHearingRequest(
 // 削除対象はfree_reading_requestsの該当レコードのみ。
 // customer_idはfree_reading_requests側が持つ参照(customers.id)であり、
 // customers側に本テーブルへの外部キー・カスケード設定は存在しないため、
-// この削除がcustomersのデータへ影響することはない。
+// この削除がcustomersや、その顧客に紐づくpaid_readings/upsell_purchasesへ
+// 影響することはない。
 export async function deleteFreeReadingRequest(id: string): Promise<void> {
   const { error } = await supabaseServerClient
     .from("free_reading_requests")

@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { FreeReadingRequestListItem } from "@/lib/freeReadingRequests/mapper";
-import { FreeReadingRequestSearchResult } from "@/lib/freeReadingRequests/search";
 import {
   CONTACT_METHOD_LABELS,
-  DIAGNOSIS_THEME_LABELS,
   GENDER_LABELS,
   PARTNER_GENDER_LABELS,
   STATUS_LABELS,
@@ -31,7 +29,7 @@ function formatPartner(request: FreeReadingRequestListItem): string {
 }
 
 interface FreeReadingRequestTableProps {
-  results: FreeReadingRequestSearchResult[];
+  results: FreeReadingRequestListItem[];
   emptyMessage?: string;
 }
 
@@ -53,12 +51,6 @@ export function FreeReadingRequestTable({
         <thead className="bg-zinc-50">
           <tr>
             <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
-              鑑定コード
-            </th>
-            <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
-              診断テーマ
-            </th>
-            <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
               申込日
             </th>
             <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
@@ -69,6 +61,9 @@ export function FreeReadingRequestTable({
             </th>
             <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
               LINE表示名
+            </th>
+            <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
+              相談者名
             </th>
             <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
               生年月日
@@ -94,7 +89,7 @@ export function FreeReadingRequestTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-100 bg-white">
-          {results.map(({ item: request, isExactCodeMatch }) => {
+          {results.map((request) => {
             const statusInfo = STATUS_LABELS[request.status] ?? {
               label: request.status,
               className: "bg-zinc-100 text-zinc-500",
@@ -107,34 +102,7 @@ export function FreeReadingRequestTable({
             };
 
             return (
-              <tr
-                key={request.id}
-                className={
-                  isExactCodeMatch ? "bg-violet-50 hover:bg-violet-100" : "hover:bg-zinc-50"
-                }
-              >
-                <td className="whitespace-nowrap px-4 py-3 font-mono font-medium text-zinc-900">
-                  {request.diagnosisCode ? (
-                    <Link
-                      href={`/customers/free-reading-requests/${request.id}`}
-                      className={
-                        isExactCodeMatch
-                          ? "rounded bg-violet-600 px-2 py-0.5 text-white"
-                          : "text-violet-600 hover:text-violet-800"
-                      }
-                    >
-                      {request.diagnosisCode}
-                    </Link>
-                  ) : (
-                    "-"
-                  )}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-zinc-600">
-                  {request.diagnosisTheme
-                    ? (DIAGNOSIS_THEME_LABELS[request.diagnosisTheme] ??
-                      request.diagnosisTheme)
-                    : "-"}
-                </td>
+              <tr key={request.id} className="hover:bg-zinc-50">
                 <td className="whitespace-nowrap px-4 py-3 text-zinc-600">
                   {request.applicationDate
                     ? formatDate(request.applicationDate)
@@ -157,6 +125,9 @@ export function FreeReadingRequestTable({
                   >
                     {request.lineName || "-"}
                   </Link>
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-zinc-600">
+                  {request.name || "（未入力）"}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-zinc-600">
                   {request.birthDate ? formatDate(request.birthDate) : "-"}

@@ -33,7 +33,7 @@ export function FreeReadingRequestListView({
           inputMode="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="鑑定コード・LINE表示名・相談者名で検索"
+          placeholder="LINE表示名・相談者名で検索"
           className="w-full rounded-md border border-zinc-300 px-4 py-3 text-base focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 sm:text-sm"
         />
         {isSearching && (
