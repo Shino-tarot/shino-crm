@@ -1,6 +1,7 @@
 "use server";
 
 import { supabaseServerClient } from "@/lib/supabase/server";
+import { requireStaff } from "@/lib/auth/requireStaff";
 import { UpsellPurchase, UpsellPurchaseFormValues } from "@/types/upsellPurchase";
 import { validateUpsellPurchaseForm } from "@/lib/upsellPurchases/validation";
 import {
@@ -16,6 +17,7 @@ export type SaveUpsellPurchaseResult =
 export async function listUpsellPurchases(
   customerId: string,
 ): Promise<UpsellPurchase[]> {
+  await requireStaff();
   const { data, error } = await supabaseServerClient
     .from("upsell_purchases")
     .select("*")
@@ -31,6 +33,7 @@ export async function createUpsellPurchase(
   customerId: string,
   values: UpsellPurchaseFormValues,
 ): Promise<SaveUpsellPurchaseResult> {
+  await requireStaff();
   const result = validateUpsellPurchaseForm(values);
   if (!result.valid) {
     return { ok: false, errors: result.errors };
@@ -56,6 +59,7 @@ export async function updateUpsellPurchase(
   id: string,
   values: UpsellPurchaseFormValues,
 ): Promise<SaveUpsellPurchaseResult> {
+  await requireStaff();
   const result = validateUpsellPurchaseForm(values);
   if (!result.valid) {
     return { ok: false, errors: result.errors };
@@ -79,6 +83,7 @@ export async function updateUpsellPurchase(
 // 物理削除ではなく論理削除(deleted_atをセット)する。
 // 呼び出し元(UI)で必ず確認ダイアログを表示してから呼ぶこと。
 export async function deleteUpsellPurchase(id: string): Promise<void> {
+  await requireStaff();
   const { error } = await supabaseServerClient
     .from("upsell_purchases")
     .update({ deleted_at: new Date().toISOString() })

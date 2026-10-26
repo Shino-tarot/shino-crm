@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { submitFreeReadingRequest } from "@/lib/freeReadingRequests/actions";
+import { submitFreeReadingRequest } from "@/lib/freeReadingRequests/publicActions";
 import {
   CONTENT_MAX_LENGTH,
   IDEAL_FUTURE_MAX_LENGTH,

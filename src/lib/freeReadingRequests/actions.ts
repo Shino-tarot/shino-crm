@@ -1,104 +1,25 @@
 "use server";
 
 import { supabaseServerClient } from "@/lib/supabase/server";
-import { FreeReadingFormValues, HearingFormValues } from "@/types/freeReadingRequest";
-import {
-  validateFreeReadingForm,
-  validateHearingForm,
-} from "@/lib/freeReadingRequests/validation";
+import { HearingFormValues } from "@/types/freeReadingRequest";
+import { validateHearingForm } from "@/lib/freeReadingRequests/validation";
 import {
   FreeReadingRequestListItem,
   FreeReadingRequestRow,
   hearingToInsertRow,
   hearingToUpdateRow,
-  normalizedRequestToInsertRow,
   rowToRequestListItem,
 } from "@/lib/freeReadingRequests/mapper";
-import { createCustomerForNewApplication } from "@/lib/customers/linking";
+import { createCustomerSafely } from "@/lib/customers/createCustomer";
+import { requireStaff } from "@/lib/auth/requireStaff";
 
-const MIN_ELAPSED_MS = 2000;
-
-export interface SubmitFreeReadingRequestMeta {
-  // 人間には見せない隠しフィールド。値が入っていたらbotとみなす
-  honeypot: string;
-  // フォームが表示された時刻(クライアントでのDate.now())
-  formLoadedAt: number;
-}
-
-export type SubmitFreeReadingRequestResult =
-  | { ok: true }
-  | { ok: false; errors: Record<string, string> };
-
-// 新規の無料鑑定申込を保存する直前に顧客(customers)を1件自動作成し、customer_idを
-// 紐付ける。既存customersへの自動統合は行わない(LINE表示名等による誤マージ事故を
-// 避けるため、常に新規作成のみ)。万一顧客作成に失敗しても、本来の申込保存自体は
-// 継続できるよう、customer_id=nullにフォールバックする(後からスタッフが手動で
-// 「顧客として登録する」操作を行える)。
-async function createCustomerSafely(seed: {
-  lineName: string;
-  readingName: string;
-  birthDate: string | null;
-  gender: string | null;
-  age: number | null;
-}): Promise<string | null> {
-  try {
-    return await createCustomerForNewApplication(seed);
-  } catch (error) {
-    console.error("[customers] auto create failed:", error);
-    return null;
-  }
-}
-
-export async function submitFreeReadingRequest(
-  values: FreeReadingFormValues,
-  meta: SubmitFreeReadingRequestMeta,
-): Promise<SubmitFreeReadingRequestResult> {
-  if (meta.honeypot.trim() !== "") {
-    console.warn("[free-reading] blocked submission", { reason: "honeypot" });
-    return { ok: true };
-  }
-
-  const elapsed = Date.now() - meta.formLoadedAt;
-  if (!Number.isFinite(elapsed) || elapsed < MIN_ELAPSED_MS) {
-    console.warn("[free-reading] blocked submission", {
-      reason: "submitted_too_fast",
-      elapsedMs: elapsed,
-    });
-    return { ok: true };
-  }
-
-  const result = validateFreeReadingForm(values);
-  if (!result.valid) {
-    return { ok: false, errors: result.errors };
-  }
-
-  const customerId = await createCustomerSafely({
-    lineName: result.data.lineName ?? "",
-    readingName: result.data.name,
-    birthDate: result.data.birthDate,
-    gender: result.data.gender,
-    age: null,
-  });
-
-  const { error } = await supabaseServerClient.from("free_reading_requests").insert({
-    ...normalizedRequestToInsertRow(result.data),
-    customer_id: customerId,
-  });
-
-  if (error) {
-    console.error("[free-reading] insert failed:", error.message);
-    return {
-      ok: false,
-      errors: { _form: "送信に失敗しました。時間をおいて再度お試しください。" },
-    };
-  }
-
-  return { ok: true };
-}
+// 管理画面用のServer Action。全ての関数の先頭でrequireStaff()を呼び、未ログイン・管理者以外を拒否する。
+// 公開フォームからの新規申込はpublicActions.tsにある(ここには置かない)。
 
 export async function listFreeReadingRequests(): Promise<
   FreeReadingRequestListItem[]
 > {
+  await requireStaff();
   const { data, error } = await supabaseServerClient
     .from("free_reading_requests")
     .select("*")
@@ -113,6 +34,7 @@ export async function listFreeReadingRequests(): Promise<
 export async function getFreeReadingRequest(
   id: string,
 ): Promise<FreeReadingRequestRow | null> {
+  await requireStaff();
   const { data, error } = await supabaseServerClient
     .from("free_reading_requests")
     .select("*")
@@ -137,6 +59,7 @@ export async function listFreeReadingRequestHistory(
   lineName: string,
   excludeId: string,
 ): Promise<FreeReadingRequestListItem[]> {
+  await requireStaff();
   const trimmed = lineName.trim();
   if (!trimmed) return [];
 
@@ -165,6 +88,7 @@ export type SaveHearingResult =
 export async function createHearingRequest(
   values: HearingFormValues,
 ): Promise<SaveHearingResult> {
+  await requireStaff();
   const result = validateHearingForm(values);
   if (!result.valid) {
     return { ok: false, errors: result.errors };
@@ -201,6 +125,7 @@ export async function updateHearingRequest(
   id: string,
   values: HearingFormValues,
 ): Promise<SaveHearingResult> {
+  await requireStaff();
   const result = validateHearingForm(values);
   if (!result.valid) {
     return { ok: false, errors: result.errors };
@@ -228,6 +153,7 @@ export async function updateHearingRequest(
 // この削除がcustomersや、その顧客に紐づくpaid_readings/upsell_purchasesへ
 // 影響することはない。
 export async function deleteFreeReadingRequest(id: string): Promise<void> {
+  await requireStaff();
   const { error } = await supabaseServerClient
     .from("free_reading_requests")
     .delete()

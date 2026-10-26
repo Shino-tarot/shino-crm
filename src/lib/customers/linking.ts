@@ -1,47 +1,18 @@
 "use server";
 
 import { supabaseServerClient } from "@/lib/supabase/server";
+import { insertCustomer } from "@/lib/customers/createCustomer";
+import { requireStaff } from "@/lib/auth/requireStaff";
 
-interface NewCustomerSeed {
-  lineName: string;
-  readingName: string;
-  birthDate: string | null;
-  gender: string | null;
-  age: number | null;
-}
-
-// customersへ新しい顧客を1件作成するだけの内部ヘルパー。
-// 既存customersとの照合は一切行わない(呼び出し側の責務)。
-async function insertCustomer(seed: NewCustomerSeed): Promise<string> {
-  const { data, error } = await supabaseServerClient
-    .from("customers")
-    .insert({
-      line_name: seed.lineName,
-      reading_name: seed.readingName,
-      birthday: seed.birthDate,
-      gender: seed.gender ?? "",
-      age: seed.age,
-    })
-    .select("id")
-    .single();
-  if (error) throw new Error(error.message);
-  return data.id as string;
-}
-
-// 新規の無料鑑定申込(公開フォーム・ヒアリング手動登録)を保存する直前に呼び出す。
-// LINE表示名等を根拠にした既存customersへの自動統合は行わず、
-// 常に新しい顧客レコードを作成する(誤って別人を同一人物として統合する事故を防ぐため)。
-export async function createCustomerForNewApplication(
-  seed: NewCustomerSeed,
-): Promise<string> {
-  return insertCustomer(seed);
-}
+// 新規申込時の顧客自動作成(insertCustomer)は、公開フォームからも使うため
+// Server ActionではないcreateCustomer.tsへ移した(このファイルからexportすると外部から直接呼べてしまうため)。
 
 // 既存(まだcustomer_idが未設定)の無料鑑定申込を、スタッフの操作で顧客登録する。
 // すでに顧客登録済みの場合は何もせず、その顧客IDをそのまま返す(冪等)。
 export async function registerCustomerForRequest(
   requestId: string,
 ): Promise<string> {
+  await requireStaff();
   const { data: request, error: fetchError } = await supabaseServerClient
     .from("free_reading_requests")
     .select("id, customer_id, line_name, reading_name, birth_date, gender, age")
@@ -76,6 +47,7 @@ export async function linkRequestsAsSameCustomer(
   currentRequestId: string,
   targetRequestId: string,
 ): Promise<string> {
+  await requireStaff();
   const currentCustomerId = await registerCustomerForRequest(currentRequestId);
 
   const { data: target, error: targetError } = await supabaseServerClient

@@ -1,6 +1,7 @@
 "use server";
 
 import { supabaseServerClient } from "@/lib/supabase/server";
+import { requireStaff } from "@/lib/auth/requireStaff";
 import { CustomerRecord, CustomerRecordFormValues } from "@/types/customerRecord";
 import { RecordCategory } from "@/lib/recordCategories";
 import {
@@ -12,6 +13,7 @@ import {
 export async function listCustomerRecords(
   customerId: string,
 ): Promise<CustomerRecord[]> {
+  await requireStaff();
   const { data, error } = await supabaseServerClient
     .from("customer_records")
     .select("*")
@@ -26,6 +28,7 @@ export async function createCustomerRecord(
   category: RecordCategory,
   values: CustomerRecordFormValues,
 ): Promise<CustomerRecord> {
+  await requireStaff();
   const { data, error } = await supabaseServerClient
     .from("customer_records")
     .insert({
@@ -43,6 +46,7 @@ export async function updateCustomerRecord(
   id: string,
   values: CustomerRecordFormValues,
 ): Promise<CustomerRecord> {
+  await requireStaff();
   const { data, error } = await supabaseServerClient
     .from("customer_records")
     .update(recordFormValuesToRow(values))
@@ -54,6 +58,7 @@ export async function updateCustomerRecord(
 }
 
 export async function deleteCustomerRecord(id: string): Promise<void> {
+  await requireStaff();
   const { error } = await supabaseServerClient
     .from("customer_records")
     .delete()

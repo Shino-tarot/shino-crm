@@ -1,6 +1,7 @@
 "use server";
 
 import { supabaseServerClient } from "@/lib/supabase/server";
+import { requireStaff } from "@/lib/auth/requireStaff";
 import { CustomerSummary } from "@/types/customerSummary";
 
 // サマリー4項目(無料鑑定回数・有料鑑定回数・アップセル回数・累計購入額)は
@@ -10,6 +11,7 @@ import { CustomerSummary } from "@/types/customerSummary";
 export async function getCustomerSummary(
   customerId: string,
 ): Promise<CustomerSummary> {
+  await requireStaff();
   const [freeReadingRes, paidReadingsRes, upsellRes] = await Promise.all([
     supabaseServerClient
       .from("free_reading_requests")

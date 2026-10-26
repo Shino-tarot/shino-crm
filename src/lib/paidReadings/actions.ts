@@ -1,6 +1,7 @@
 "use server";
 
 import { supabaseServerClient } from "@/lib/supabase/server";
+import { requireStaff } from "@/lib/auth/requireStaff";
 import { PaidReading, PaidReadingFormValues } from "@/types/paidReading";
 import { validatePaidReadingForm } from "@/lib/paidReadings/validation";
 import {
@@ -17,6 +18,7 @@ export type SavePaidReadingResult =
 export async function listPaidReadings(
   customerId: string,
 ): Promise<PaidReading[]> {
+  await requireStaff();
   const { data, error } = await supabaseServerClient
     .from("paid_readings")
     .select("*")
@@ -32,6 +34,7 @@ export async function createPaidReading(
   customerId: string,
   values: PaidReadingFormValues,
 ): Promise<SavePaidReadingResult> {
+  await requireStaff();
   const result = validatePaidReadingForm(values);
   if (!result.valid) {
     return { ok: false, errors: result.errors };
@@ -57,6 +60,7 @@ export async function updatePaidReading(
   id: string,
   values: PaidReadingFormValues,
 ): Promise<SavePaidReadingResult> {
+  await requireStaff();
   const result = validatePaidReadingForm(values);
   if (!result.valid) {
     return { ok: false, errors: result.errors };
@@ -80,6 +84,7 @@ export async function updatePaidReading(
 // 物理削除ではなく論理削除(deleted_atをセット)する。
 // 呼び出し元(UI)で必ず確認ダイアログを表示してから呼ぶこと。
 export async function deletePaidReading(id: string): Promise<void> {
+  await requireStaff();
   const { error } = await supabaseServerClient
     .from("paid_readings")
     .update({ deleted_at: new Date().toISOString() })
