@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { DbLabelBanner } from "@/components/layout/DbLabelBanner";
 import { requireStaffPage } from "@/lib/auth/requireStaff";
 
 // 顧客情報を扱う管理画面のため、検索エンジンにインデックスさせない
@@ -18,6 +19,7 @@ export default async function CustomersLayout({
 
   return (
     <>
+      <DbLabelBanner />
       <AppHeader />
       {children}
     </>
