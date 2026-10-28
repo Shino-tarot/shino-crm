@@ -5,11 +5,13 @@ import { HearingFormValues } from "@/types/freeReadingRequest";
 import { STATUS_LABELS } from "@/lib/freeReadingRequests/labels";
 import { formatDate, formatDateTime, fromJstDateTimeLocal } from "@/lib/format";
 import { CopyButton } from "@/components/ui/CopyButton";
+import { ScheduledSendBadge } from "@/components/freeReadingRequests/ScheduledSendBadge";
 
 interface CurrentFreeReadingCardProps {
   values: HearingFormValues;
   sequenceNumber: number;
   onEdit: () => void;
+  sendScheduled?: boolean;
 }
 
 // 「今回開いている申込」を、過去履歴と同じ無料鑑定履歴セクションの中で
@@ -21,6 +23,7 @@ export function CurrentFreeReadingCard({
   values,
   sequenceNumber,
   onEdit,
+  sendScheduled = false,
 }: CurrentFreeReadingCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -51,6 +54,7 @@ export function CurrentFreeReadingCard({
         >
           {statusInfo.label}
         </span>
+        {sendScheduled && <ScheduledSendBadge />}
       </div>
 
       {!isExpanded && values.content && (

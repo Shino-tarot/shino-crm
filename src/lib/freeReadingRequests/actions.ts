@@ -12,6 +12,10 @@ import {
 } from "@/lib/freeReadingRequests/mapper";
 import { createCustomerSafely } from "@/lib/customers/createCustomer";
 import { requireStaff } from "@/lib/auth/requireStaff";
+import {
+  DETAIL_REQUEST_OPTIONS,
+  DetailRequestValue,
+} from "@/lib/freeReadingRequests/labels";
 
 // 管理画面用のServer Action。全ての関数の先頭でrequireStaff()を呼び、未ログイン・管理者以外を拒否する。
 // 公開フォームからの新規申込はpublicActions.tsにある(ここには置かない)。
@@ -145,6 +149,67 @@ export async function updateHearingRequest(
   }
 
   return { ok: true, id };
+}
+
+export type SaveFollowUpFieldResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+// 詳細希望(未回答/あり/なし)だけを更新する。ステータス等の他カラムには触れない。
+export async function updateDetailRequest(
+  id: string,
+  value: DetailRequestValue,
+): Promise<SaveFollowUpFieldResult> {
+  await requireStaff();
+  if (!DETAIL_REQUEST_OPTIONS.some((option) => option.value === value)) {
+    return { ok: false, error: "詳細希望の選択内容が正しくありません。" };
+  }
+
+  const { data, error } = await supabaseServerClient
+    .from("free_reading_requests")
+    .update({ detail_request: value })
+    .eq("id", id)
+    .select("id");
+
+  if (error || !data?.length) {
+    console.error("[follow-up] detail_request update failed:", error?.message);
+    return {
+      ok: false,
+      error: "詳細希望の保存に失敗しました。時間をおいて再度お試しください。",
+    };
+  }
+
+  return { ok: true };
+}
+
+export type SaveFollowedUpResult =
+  | { ok: true; followedUpAt: string | null }
+  | { ok: false; error: string };
+
+// フォロー済みにする場合は現在日時、未フォローに戻す場合はNULLをfollowed_up_atに保存する。
+// ステータス等の他カラムには触れない。
+export async function updateFollowedUp(
+  id: string,
+  followedUp: boolean,
+): Promise<SaveFollowedUpResult> {
+  await requireStaff();
+  const followedUpAt = followedUp ? new Date().toISOString() : null;
+
+  const { data, error } = await supabaseServerClient
+    .from("free_reading_requests")
+    .update({ followed_up_at: followedUpAt })
+    .eq("id", id)
+    .select("followed_up_at");
+
+  if (error || !data?.length) {
+    console.error("[follow-up] followed_up_at update failed:", error?.message);
+    return {
+      ok: false,
+      error: "フォロー状況の保存に失敗しました。時間をおいて再度お試しください。",
+    };
+  }
+
+  return { ok: true, followedUpAt: data[0].followed_up_at };
 }
 
 // 削除対象はfree_reading_requestsの該当レコードのみ。

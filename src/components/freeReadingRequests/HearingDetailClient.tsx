@@ -9,6 +9,7 @@ import { BasicInfoCard } from "@/components/freeReadingRequests/BasicInfoCard";
 import { CurrentFreeReadingCard } from "@/components/freeReadingRequests/CurrentFreeReadingCard";
 import { FreeReadingRequestHistoryList } from "@/components/freeReadingRequests/FreeReadingRequestHistoryList";
 import { RegisterCustomerButton } from "@/components/freeReadingRequests/RegisterCustomerButton";
+import { FollowUpCard } from "@/components/freeReadingRequests/FollowUpCard";
 import { CustomerSummaryCard } from "@/components/customers/CustomerSummaryCard";
 import { PaidReadingSection } from "@/components/paidReadings/PaidReadingSection";
 import { UpsellPurchaseSection } from "@/components/upsellPurchases/UpsellPurchaseSection";
@@ -21,6 +22,7 @@ import { HearingFormValues } from "@/types/freeReadingRequest";
 import { FreeReadingRequestListItem } from "@/lib/freeReadingRequests/mapper";
 import { ConsultationStatsResult } from "@/lib/freeReadingRequests/consultationStats";
 import { ParsedHearing } from "@/lib/freeReadingRequests/parseHearingText";
+import { DetailRequestValue } from "@/lib/freeReadingRequests/labels";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { CustomerSummary } from "@/types/customerSummary";
 import { PaidReading } from "@/types/paidReading";
@@ -36,6 +38,9 @@ interface HearingDetailClientProps {
   customerSummary: CustomerSummary | null;
   paidReadings: PaidReading[];
   upsellPurchases: UpsellPurchase[];
+  initialDetailRequest: DetailRequestValue;
+  initialFollowedUpAt: string | null;
+  sendScheduled: boolean;
 }
 
 export function HearingDetailClient({
@@ -48,6 +53,9 @@ export function HearingDetailClient({
   customerSummary,
   paidReadings,
   upsellPurchases,
+  initialDetailRequest,
+  initialFollowedUpAt,
+  sendScheduled,
 }: HearingDetailClientProps) {
   const router = useRouter();
   const [values, setValues] = useState<HearingFormValues>(initialValues);
@@ -63,6 +71,15 @@ export function HearingDetailClient({
   const [deleteError, setDeleteError] = useState("");
 
   const editFormRef = useRef<HTMLDivElement>(null);
+
+  // 10分ごとの再取得などでサーバー側のステータスが自動更新された場合、
+  // 編集中でなければ表示中のステータスも追従させる(古い値のまま保存して戻してしまわないため)。
+  const [lastServerStatus, setLastServerStatus] = useState(initialValues.status);
+  if (initialValues.status !== lastServerStatus && !isEditMode) {
+    setLastServerStatus(initialValues.status);
+    setValues((prev) => ({ ...prev, status: initialValues.status }));
+    setSavedValues((prev) => ({ ...prev, status: initialValues.status }));
+  }
 
   useEffect(() => {
     if (isEditMode) {
@@ -109,6 +126,9 @@ export function HearingDetailClient({
         return;
       }
       setSavedValues(values);
+      // 編集中に自動更新で届いたステータスは、手動で保存した値で上書き済みとして扱う
+      // (保存直後に古い自動更新の値へ表示が戻り、DBと食い違うのを防ぐ)
+      setLastServerStatus(initialValues.status);
       setSavedMessage("保存しました。");
       setIsEditMode(false);
     } catch {
@@ -190,6 +210,7 @@ export function HearingDetailClient({
         <>
           <BasicInfoCard
             values={values}
+            sendScheduled={sendScheduled}
             onEdit={enterEditMode}
             firstApplicationDate={
               consultationStats.available
@@ -240,6 +261,13 @@ export function HearingDetailClient({
         </div>
       )}
 
+      {/* 詳細希望・フォロー状況(編集モードとは独立して即保存) */}
+      <FollowUpCard
+        requestId={id}
+        initialDetailRequest={initialDetailRequest}
+        initialFollowedUpAt={initialFollowedUpAt}
+      />
+
       {/* ⑤ 無料鑑定履歴(今回 + 過去) */}
       <section className="mt-10 border-t border-zinc-200 pt-6">
         <h2 className="text-sm font-semibold text-zinc-900">
@@ -248,6 +276,7 @@ export function HearingDetailClient({
         <ul className="mt-3 space-y-3">
           <CurrentFreeReadingCard
             values={values}
+            sendScheduled={sendScheduled}
             sequenceNumber={totalFreeReadingCount}
             onEdit={enterEditMode}
           />

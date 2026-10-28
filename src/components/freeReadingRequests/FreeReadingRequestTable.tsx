@@ -7,6 +7,7 @@ import {
   STATUS_LABELS,
 } from "@/lib/freeReadingRequests/labels";
 import { formatDate, formatDateTime } from "@/lib/format";
+import { ScheduledSendBadge } from "@/components/freeReadingRequests/ScheduledSendBadge";
 
 const CONTENT_PREVIEW_LENGTH = 40;
 
@@ -112,11 +113,14 @@ export function FreeReadingRequestTable({
                   {formatDateTime(request.createdAt)}
                 </td>
                 <td className="px-4 py-3">
-                  <span
-                    className={`inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${statusInfo.className}`}
-                  >
-                    {statusInfo.label}
-                  </span>
+                  <div className="flex flex-col items-start gap-1">
+                    <span
+                      className={`inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${statusInfo.className}`}
+                    >
+                      {statusInfo.label}
+                    </span>
+                    {request.sendScheduled && <ScheduledSendBadge />}
+                  </div>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 font-medium">
                   <Link

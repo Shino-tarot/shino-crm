@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FreeReadingRequestListItem } from "@/lib/freeReadingRequests/mapper";
 import { STATUS_LABELS } from "@/lib/freeReadingRequests/labels";
 import { formatDate } from "@/lib/format";
+import { ScheduledSendBadge } from "@/components/freeReadingRequests/ScheduledSendBadge";
 
 const CONTENT_PREVIEW_LENGTH = 40;
 
@@ -52,11 +53,14 @@ export function FreeReadingRequestCardList({
                     相談者名: {request.name || "（未入力）"}
                   </p>
                 </div>
-                <span
-                  className={`inline-block shrink-0 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${statusInfo.className}`}
-                >
-                  {statusInfo.label}
-                </span>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span
+                    className={`inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${statusInfo.className}`}
+                  >
+                    {statusInfo.label}
+                  </span>
+                  {request.sendScheduled && <ScheduledSendBadge />}
+                </div>
               </div>
 
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-500">

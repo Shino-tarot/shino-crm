@@ -1,6 +1,7 @@
 import { HearingFormValues } from "@/types/freeReadingRequest";
 import { STATUS_LABELS } from "@/lib/freeReadingRequests/labels";
 import { formatDate } from "@/lib/format";
+import { ScheduledSendBadge } from "@/components/freeReadingRequests/ScheduledSendBadge";
 
 interface BasicInfoCardProps {
   values: HearingFormValues;
@@ -8,6 +9,8 @@ interface BasicInfoCardProps {
   // computeConsultationStats(LINE表示名ベースの既存履歴突合、ロジック不変)から
   // 渡される初回申込日。新しいDB項目は追加していない。
   firstApplicationDate?: string | null;
+  // 送信日時が未来の無料・有料鑑定がある場合に「送信予約中」バッジを添える
+  sendScheduled?: boolean;
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -25,6 +28,7 @@ export function BasicInfoCard({
   values,
   onEdit,
   firstApplicationDate,
+  sendScheduled = false,
 }: BasicInfoCardProps) {
   const statusInfo = STATUS_LABELS[values.status] ?? {
     label: values.status,
@@ -81,6 +85,7 @@ export function BasicInfoCard({
         >
           {statusInfo.label}
         </span>
+        {sendScheduled && <ScheduledSendBadge />}
       </div>
     </section>
   );

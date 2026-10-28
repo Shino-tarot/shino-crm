@@ -27,15 +27,37 @@ export const STATUS_LABELS: Record<string, { label: string; className: string }>
     className: "bg-teal-100 text-teal-700",
   },
   paid_reading_proposed: {
-    label: "有料鑑定案内済み",
+    label: "本鑑定案内済み",
     className: "bg-rose-100 text-rose-700",
   },
   completed: { label: "完了", className: "bg-emerald-100 text-emerald-700" },
 };
 
-export const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(
+// 既存データ保持のためDB・バリデーション上は有効なままだが、通常の選択肢には出さないステータス
+const HIDDEN_STATUS_VALUES = ["completed"];
+
+const ALL_STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(
   ([value, info]) => ({ value, label: info.label }),
 );
+
+// 編集画面用の選択肢。すでに非表示ステータスが設定されている申込では、
+// 現在値が選択肢から消えて別の値に変わってしまわないよう、その値だけ残す
+export function getStatusOptionsFor(currentStatus: string) {
+  return ALL_STATUS_OPTIONS.filter(
+    (option) =>
+      !HIDDEN_STATUS_VALUES.includes(option.value) ||
+      option.value === currentStatus,
+  );
+}
+
+// 詳細希望(detail_request)。DBではNULL=未回答 / 'yes'=あり / 'no'=なし で保存する
+export const DETAIL_REQUEST_OPTIONS = [
+  { value: null, label: "未回答" },
+  { value: "yes", label: "あり" },
+  { value: "no", label: "なし" },
+] as const;
+
+export type DetailRequestValue = (typeof DETAIL_REQUEST_OPTIONS)[number]["value"];
 
 export const CONTACT_METHOD_LABELS: Record<
   string,

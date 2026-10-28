@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { listFreeReadingRequests } from "@/lib/freeReadingRequests/actions";
 import { FreeReadingRequestListView } from "@/components/freeReadingRequests/FreeReadingRequestListView";
+import { syncAutoStatuses } from "@/lib/statusAutoUpdate/sync";
+import { listScheduledPaidReadingCustomerIds } from "@/lib/statusAutoUpdate/scheduled";
+import { isScheduledSend } from "@/lib/statusAutoUpdate/rules";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +14,21 @@ interface FreeReadingRequestsPageProps {
 export default async function FreeReadingRequestsPage({
   searchParams,
 }: FreeReadingRequestsPageProps) {
-  const [requests, { deleted }] = await Promise.all([
+  // 一覧取得の前にステータス自動更新を済ませる(レイアウトと同一リクエスト内では1回だけ実行される)
+  await syncAutoStatuses();
+  const [rawRequests, scheduledPaidCustomerIds, { deleted }] = await Promise.all([
     listFreeReadingRequests(),
+    listScheduledPaidReadingCustomerIds(),
     searchParams,
   ]);
+  const now = new Date();
+  const requests = rawRequests.map((request) => ({
+    ...request,
+    sendScheduled:
+      isScheduledSend(request.sentAt, now) ||
+      (request.customerId !== null &&
+        scheduledPaidCustomerIds.has(request.customerId)),
+  }));
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">

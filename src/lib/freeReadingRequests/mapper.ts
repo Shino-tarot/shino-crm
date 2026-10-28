@@ -46,6 +46,9 @@ export interface FreeReadingRequestRow {
   customer_id: string | null;
   sent_reading_content: string | null;
   sent_at: string | null;
+  // 0011マイグレーション未適用のDBではundefinedになりうる
+  detail_request?: string | null;
+  followed_up_at?: string | null;
 }
 
 export interface FreeReadingRequestListItem {
@@ -69,6 +72,8 @@ export interface FreeReadingRequestListItem {
   customerId: string | null;
   sentReadingContent: string | null;
   sentAt: string | null;
+  // 無料鑑定または紐づく有料鑑定の送信日時が未来か(「送信予約中」バッジ用)。一覧ページで付与する
+  sendScheduled?: boolean;
 }
 
 export function rowToRequestListItem(

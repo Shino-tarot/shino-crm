@@ -1,7 +1,7 @@
 "use client";
 
 import { HearingFormValues } from "@/types/freeReadingRequest";
-import { STATUS_OPTIONS } from "@/lib/freeReadingRequests/labels";
+import { getStatusOptionsFor } from "@/lib/freeReadingRequests/labels";
 import { CopyButton } from "@/components/ui/CopyButton";
 
 interface HearingFormFieldsProps {
@@ -221,7 +221,7 @@ export function HearingFormFields({
             onChange={(e) => onChange("status", e.target.value)}
             className={inputClass}
           >
-            {STATUS_OPTIONS.map((option) => (
+            {getStatusOptionsFor(values.status).map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

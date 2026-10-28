@@ -12,6 +12,8 @@ import { getCustomerSummary } from "@/lib/customers/summary";
 import { listPaidReadings } from "@/lib/paidReadings/actions";
 import { listUpsellPurchases } from "@/lib/upsellPurchases/actions";
 import { HearingDetailClient } from "@/components/freeReadingRequests/HearingDetailClient";
+import { syncAutoStatuses } from "@/lib/statusAutoUpdate/sync";
+import { isScheduledSend } from "@/lib/statusAutoUpdate/rules";
 import { CustomerSummary } from "@/types/customerSummary";
 import { PaidReading } from "@/types/paidReading";
 import { UpsellPurchase } from "@/types/upsellPurchase";
@@ -26,6 +28,8 @@ export default async function HearingDetailPage({
   params,
 }: HearingDetailPageProps) {
   const { id } = await params;
+  // 申込取得の前にステータス自動更新を済ませる(レイアウトと同一リクエスト内では1回だけ実行される)
+  await syncAutoStatuses();
   const row = await getFreeReadingRequest(id);
 
   if (!row) {
@@ -68,6 +72,11 @@ export default async function HearingDetailPage({
     ]);
   }
 
+  const now = new Date();
+  const sendScheduled =
+    isScheduledSend(row.sent_at ?? null, now) ||
+    paidReadings.some((reading) => isScheduledSend(reading.sentAt || null, now));
+
   return (
     <HearingDetailClient
       id={id}
@@ -79,6 +88,13 @@ export default async function HearingDetailPage({
       customerSummary={customerSummary}
       paidReadings={paidReadings}
       upsellPurchases={upsellPurchases}
+      initialDetailRequest={
+        row.detail_request === "yes" || row.detail_request === "no"
+          ? row.detail_request
+          : null
+      }
+      initialFollowedUpAt={row.followed_up_at ?? null}
+      sendScheduled={sendScheduled}
     />
   );
 }
