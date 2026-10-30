@@ -12,6 +12,10 @@ export interface CustomerRow {
   birthday: string | null;
   created_at: string;
   updated_at: string;
+  // 0013マイグレーション未適用のDBではundefinedになりうる
+  deleted_at?: string | null;
+  // 0015マイグレーション未適用のDBではundefinedになりうる
+  merged_into_customer_id?: string | null;
 }
 
 export function rowToCustomer(row: CustomerRow): Customer {
@@ -27,6 +31,8 @@ export function rowToCustomer(row: CustomerRow): Customer {
     birthday: row.birthday ?? "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    deletedAt: row.deleted_at ?? null,
+    mergedIntoCustomerId: row.merged_into_customer_id ?? null,
   };
 }
 

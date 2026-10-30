@@ -1,92 +1,50 @@
-"use client";
+import { listConversationMessages } from "@/lib/conversationMessages/actions";
+import { listCustomerFreeReadingRequests } from "@/lib/freeReadingRequests/actions";
+import { listPaidReadings } from "@/lib/paidReadings/actions";
+import { listUpsellPurchases } from "@/lib/upsellPurchases/actions";
+import { getCustomerSummary } from "@/lib/customers/summary";
+import { getCurrentAccountId } from "@/lib/accounts/current";
+import { CustomerDetailClient, CustomerDetailData } from "@/components/customers/CustomerDetailClient";
 
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useState } from "react";
-import { BasicInfoTab } from "@/components/customers/tabs/BasicInfoTab";
-import { RecordListTab } from "@/components/customers/tabs/RecordListTab";
-import { Tabs } from "@/components/ui/Tabs";
-import { useCustomers } from "@/hooks/useCustomers";
-import { RECORD_CATEGORIES } from "@/lib/recordCategories";
+export const dynamic = "force-dynamic";
 
-export default function CustomerDetailPage() {
-  const { id } = useParams<{ id: string }>();
-  const { customers, isLoaded, updateCustomer } = useCustomers();
-  const [activeTab, setActiveTab] = useState("basic");
-
-  if (!isLoaded) {
-    return (
-      <div className="mx-auto max-w-5xl px-6 py-8 text-sm text-zinc-400">
-        読み込み中...
-      </div>
-    );
+// 1つの読み込みが失敗しても顧客詳細全体を表示できなくしない(その部分だけエラー表示にする)
+async function loadOrNull<T>(label: string, load: () => Promise<T>): Promise<T | null> {
+  try {
+    return await load();
+  } catch {
+    console.error(`[customer-detail] ${label} load failed`);
+    return null;
   }
+}
 
-  const customer = customers.find((c) => c.id === id);
+// 顧客情報・記録はこれまでどおりCustomerDetailClient(ブラウザ側)で読み込み、
+// 無料鑑定申込・有料鑑定・アップセル・会話履歴・サマリーはサーバー側で取得して渡す
+// (無料鑑定申込の詳細画面と同じデータ・同じ取得処理。二重に保存しない)。
+export default async function CustomerDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const accountId = await getCurrentAccountId();
 
-  if (!customer) {
-    return (
-      <div className="mx-auto max-w-5xl px-6 py-8">
-        <p className="text-sm text-zinc-500">顧客が見つかりませんでした。</p>
-        <Link
-          href="/customers"
-          className="mt-4 inline-block text-sm text-violet-600 hover:text-violet-800"
-        >
-          ← 顧客一覧に戻る
-        </Link>
-      </div>
-    );
-  }
+  const [conversationMessages, freeReadingRequests, paidReadings, upsellPurchases, summary] =
+    await Promise.all([
+      // LINE未紐づけの顧客は手動登録分のみ(0件なら空配列)が返る
+      loadOrNull("conversation messages", () => listConversationMessages(accountId, id)),
+      loadOrNull("free reading requests", () => listCustomerFreeReadingRequests(accountId, id)),
+      loadOrNull("paid readings", () => listPaidReadings(accountId, id)),
+      loadOrNull("upsell purchases", () => listUpsellPurchases(accountId, id)),
+      loadOrNull("summary", () => getCustomerSummary(accountId, id)),
+    ]);
 
-  const tabs = [
-    { key: "basic", label: "基本情報" },
-    ...RECORD_CATEGORIES.map((category) => ({
-      key: category.key,
-      label: category.label,
-    })),
-  ];
-
-  const activeRecordCategory = RECORD_CATEGORIES.find(
-    (category) => category.key === activeTab,
-  );
-
-  return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
-      <Link
-        href="/customers"
-        className="text-sm text-violet-600 hover:text-violet-800"
-      >
-        ← 顧客一覧に戻る
-      </Link>
-
-      <div className="mt-3 mb-6">
-        <p className="text-xs text-zinc-400">顧客ID: No.{customer.customerNo}</p>
-        <h1 className="text-xl font-semibold text-zinc-900">
-          {customer.readingName}
-        </h1>
-        {customer.lineName && (
-          <p className="text-sm text-zinc-500">
-            （LINE：{customer.lineName}）
-          </p>
-        )}
-      </div>
-
-      <Tabs tabs={tabs} activeKey={activeTab} onChange={setActiveTab} />
-
-      <div className="mt-6">
-        {activeTab === "basic" && (
-          <BasicInfoTab
-            customer={customer}
-            onUpdate={(values) => updateCustomer(customer.id, values)}
-          />
-        )}
-        {activeRecordCategory && (
-          <RecordListTab
-            customerId={customer.id}
-            config={activeRecordCategory}
-          />
-        )}
-      </div>
-    </div>
-  );
+  const data: CustomerDetailData = {
+    conversationMessages,
+    freeReadingRequests,
+    paidReadings,
+    upsellPurchases,
+    summary,
+  };
+  return <CustomerDetailClient id={id} data={data} />;
 }

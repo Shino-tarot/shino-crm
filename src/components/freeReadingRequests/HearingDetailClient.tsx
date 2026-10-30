@@ -13,31 +13,42 @@ import { FollowUpCard } from "@/components/freeReadingRequests/FollowUpCard";
 import { CustomerSummaryCard } from "@/components/customers/CustomerSummaryCard";
 import { PaidReadingSection } from "@/components/paidReadings/PaidReadingSection";
 import { UpsellPurchaseSection } from "@/components/upsellPurchases/UpsellPurchaseSection";
+import { ConversationSection } from "@/components/conversationMessages/ConversationSection";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { CustomerHiddenBadge } from "@/components/freeReadingRequests/CustomerHiddenBadge";
+import {
+  REQUEST_CUSTOMER_MISMATCH_LABELS,
+  requestCustomerMismatch,
+} from "@/lib/freeReadingRequests/customerLink";
 import {
   deleteFreeReadingRequest,
   updateHearingRequest,
 } from "@/lib/freeReadingRequests/actions";
 import { HearingFormValues } from "@/types/freeReadingRequest";
 import { FreeReadingRequestListItem } from "@/lib/freeReadingRequests/mapper";
-import { ConsultationStatsResult } from "@/lib/freeReadingRequests/consultationStats";
 import { ParsedHearing } from "@/lib/freeReadingRequests/parseHearingText";
 import { DetailRequestValue } from "@/lib/freeReadingRequests/labels";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { CustomerSummary } from "@/types/customerSummary";
 import { PaidReading } from "@/types/paidReading";
 import { UpsellPurchase } from "@/types/upsellPurchase";
+import { ConversationMessage } from "@/types/conversationMessage";
+import { useAccountId } from "@/components/accounts/AccountProvider";
 
 interface HearingDetailClientProps {
   id: string;
   initialValues: HearingFormValues;
   createdAt: string;
   history: FreeReadingRequestListItem[];
-  consultationStats: ConsultationStatsResult;
   customerId: string | null;
+  // 紐づく顧客が顧客管理で非表示(論理削除)中か
+  customerHidden: boolean;
+  // この申込が登録されている顧客の顧客番号・名前・生年月日(顧客未登録はnull)
+  linkedCustomer: { customerNo: number; name: string | null; birthday: string | null } | null;
   customerSummary: CustomerSummary | null;
   paidReadings: PaidReading[];
   upsellPurchases: UpsellPurchase[];
+  conversationMessages: ConversationMessage[];
   initialDetailRequest: DetailRequestValue;
   initialFollowedUpAt: string | null;
   sendScheduled: boolean;
@@ -48,15 +59,18 @@ export function HearingDetailClient({
   initialValues,
   createdAt,
   history,
-  consultationStats,
   customerId,
+  customerHidden,
+  linkedCustomer,
   customerSummary,
   paidReadings,
   upsellPurchases,
+  conversationMessages,
   initialDetailRequest,
   initialFollowedUpAt,
   sendScheduled,
 }: HearingDetailClientProps) {
+  const accountId = useAccountId();
   const router = useRouter();
   const [values, setValues] = useState<HearingFormValues>(initialValues);
   // キャンセル時に直前の保存済み状態へ戻すために、保存済みの値を別に保持する。
@@ -100,16 +114,9 @@ export function HearingDetailClient({
     setValues((prev) => ({ ...prev, [field]: value }));
   }
 
-  function applyParsed(parsed: ParsedHearing) {
-    setValues((prev) => ({
-      ...prev,
-      name: parsed.name || prev.name,
-      birthDate: parsed.birthDate || prev.birthDate,
-      partnerName: parsed.partnerName || prev.partnerName,
-      partnerBirthDate: parsed.partnerBirthDate || prev.partnerBirthDate,
-      content: parsed.content || prev.content,
-      idealFuture: parsed.idealFuture || prev.idealFuture,
-    }));
+  // 確認画面で選んだ項目だけが渡される(選ばなかった項目は今の値のまま)
+  function applyParsed(parsed: Partial<ParsedHearing>) {
+    setValues((prev) => ({ ...prev, ...parsed }));
     // 取り込んだ内容をすぐ確認・保存できるよう編集モードへ切り替える
     enterEditMode();
   }
@@ -120,7 +127,7 @@ export function HearingDetailClient({
     setSavedMessage("");
     setIsSubmitting(true);
     try {
-      const result = await updateHearingRequest(id, values);
+      const result = await updateHearingRequest(accountId, id, values);
       if (!result.ok) {
         setErrors(result.errors);
         return;
@@ -151,7 +158,7 @@ export function HearingDetailClient({
     setIsDeleting(true);
     setDeleteError("");
     try {
-      await deleteFreeReadingRequest(id);
+      await deleteFreeReadingRequest(accountId, id);
       router.push("/customers/free-reading-requests?deleted=1");
     } catch {
       setDeleteError("削除に失敗しました。時間をおいて再度お試しください。");
@@ -160,13 +167,22 @@ export function HearingDetailClient({
     }
   }
 
-  // 「今回」を含めた無料鑑定の総数。customer_id紐付け済みならDB集計値、
-  // 未紐付けでもLINE表示名ベースの履歴突合(computeConsultationStats)から算出できる。
-  const totalFreeReadingCount = customerSummary
-    ? customerSummary.freeReadingCount
-    : consultationStats.available
-      ? consultationStats.stats.count
-      : history.length + 1;
+  // 「今回」を含めたこの顧客の無料鑑定の総数(顧客IDで集計)。
+  // LINE表示名が同じだけの申込は別人の可能性があるため数えない(顧客未登録ならこの申込1件のみ)。
+  const totalFreeReadingCount = customerSummary ? customerSummary.freeReadingCount : 1;
+  // 初回申込日も、同じ顧客IDの申込だけから求める(LINE表示名が同じだけの申込は含めない)
+  const sameCustomerDates = [
+    ...history
+      .filter((item) => customerId !== null && item.customerId === customerId)
+      .map((item) => item.applicationDate ?? item.createdAt),
+    initialValues.applicationDate || createdAt,
+  ].filter((date): date is string => Boolean(date));
+  const firstApplicationDate =
+    sameCustomerDates.length > 1
+      ? sameCustomerDates.reduce((earliest, date) =>
+          new Date(date).getTime() < new Date(earliest).getTime() ? date : earliest,
+        )
+      : null;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8">
@@ -202,6 +218,32 @@ export function HearingDetailClient({
         totalAmount={customerSummary ? customerSummary.totalAmount : null}
       />
 
+      {/* この申込が登録されている顧客(顧客番号)。申込の名前・生年月日と違う場合は注意を出す */}
+      {customerId && linkedCustomer && (
+        <LinkedCustomerNotice
+          customerId={customerId}
+          customer={linkedCustomer}
+          requestName={initialValues.name}
+          requestBirthDate={initialValues.birthDate}
+        />
+      )}
+
+      {/* 顧客が非表示中の場合の案内(申込・購入履歴・会話履歴は通常どおり残っている) */}
+      {customerId && customerHidden && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <span>
+            <CustomerHiddenBadge />
+            <span className="ml-2">この申込の顧客は、顧客管理で非表示になっています。</span>
+          </span>
+          <Link
+            href={`/customers/${customerId}`}
+            className="shrink-0 text-sm font-medium text-violet-700 hover:text-violet-900"
+          >
+            顧客詳細で復元する →
+          </Link>
+        </div>
+      )}
+
       {/* ③ 顧客登録案内(未登録の場合のみ) */}
       {!customerId && <RegisterCustomerButton requestId={id} />}
 
@@ -212,11 +254,7 @@ export function HearingDetailClient({
             values={values}
             sendScheduled={sendScheduled}
             onEdit={enterEditMode}
-            firstApplicationDate={
-              consultationStats.available
-                ? consultationStats.stats.firstApplicationDate
-                : null
-            }
+            firstApplicationDate={firstApplicationDate}
           />
           {savedMessage && (
             <p className="mt-2 text-sm text-green-600">{savedMessage}</p>
@@ -271,7 +309,7 @@ export function HearingDetailClient({
       {/* ⑤ 無料鑑定履歴(今回 + 過去) */}
       <section className="mt-10 border-t border-zinc-200 pt-6">
         <h2 className="text-sm font-semibold text-zinc-900">
-          無料鑑定履歴（全{totalFreeReadingCount}件）
+          この顧客の無料鑑定（全{totalFreeReadingCount}件）
         </h2>
         <ul className="mt-3 space-y-3">
           <CurrentFreeReadingCard
@@ -285,9 +323,7 @@ export function HearingDetailClient({
           history={history}
           currentRequestId={id}
           currentCustomerId={customerId}
-          currentName={values.name}
-          currentLineName={values.lineName}
-          totalCount={totalFreeReadingCount}
+          currentCustomerHidden={customerHidden}
         />
       </section>
 
@@ -299,18 +335,26 @@ export function HearingDetailClient({
         <>
           <PaidReadingSection customerId={customerId} readings={paidReadings} />
           <UpsellPurchaseSection customerId={customerId} purchases={upsellPurchases} />
+          {/* 会話履歴(顧客単位。無料鑑定〜本鑑定〜購入後フォローまで時系列で表示) */}
+          <ConversationSection customerId={customerId} messages={conversationMessages} />
         </>
       ) : (
         <section className="mt-10 border-t border-zinc-200 pt-6">
-          <h2 className="text-sm font-semibold text-zinc-900">購入履歴</h2>
+          <h2 className="text-sm font-semibold text-zinc-900">購入履歴・会話履歴</h2>
           <p className="mt-3 rounded-md border border-dashed border-zinc-300 p-4 text-sm text-zinc-500">
-            顧客登録後に、有料鑑定・アップセルの購入履歴を記録できます。
+            顧客登録後に、有料鑑定・アップセルの購入履歴と会話履歴を記録できます。
           </p>
         </section>
       )}
 
       {/* ⑧ LINEヒアリング取り込み */}
-      <LineHearingImportAccordion onParsed={applyParsed} />
+      <LineHearingImportAccordion
+        currentValues={values}
+        onApply={applyParsed}
+        lineMessages={conversationMessages
+          .filter((message) => message.direction === "incoming")
+          .map((message) => ({ id: message.id, body: message.body, sentAt: message.sentAt }))}
+      />
 
       {/* ⑨ その他管理情報 */}
       <section className="mt-10 border-t border-zinc-200 pt-6">
@@ -378,6 +422,42 @@ export function HearingDetailClient({
           onCancel={() => setIsDeleteConfirmOpen(false)}
           onConfirm={handleDelete}
         />
+      )}
+    </div>
+  );
+}
+
+function LinkedCustomerNotice({
+  customerId,
+  customer,
+  requestName,
+  requestBirthDate,
+}: {
+  customerId: string;
+  customer: { customerNo: number; name: string | null; birthday: string | null };
+  requestName: string;
+  requestBirthDate: string;
+}) {
+  const mismatch = requestCustomerMismatch(
+    { name: requestName, birthDate: requestBirthDate },
+    { readingName: customer.name, birthday: customer.birthday },
+  );
+  return (
+    <div
+      className={`mt-4 rounded-md border px-4 py-2 text-sm ${
+        mismatch.length > 0 ? "border-amber-300 bg-amber-50 text-amber-900" : "border-zinc-200 bg-white text-zinc-600"
+      }`}
+    >
+      この申込の顧客：
+      <Link href={`/customers/${customerId}`} className="font-medium text-violet-700 hover:text-violet-900">
+        顧客番号 No.{customer.customerNo} {customer.name || "（名前未入力）"}
+      </Link>
+      {customer.birthday ? `（${formatDate(customer.birthday)}）` : ""}
+      {mismatch.length > 0 && (
+        <p className="mt-1 text-xs">
+          申込の{mismatch.map((m) => REQUEST_CUSTOMER_MISMATCH_LABELS[m]).join("・")}
+          が顧客の情報と違います。別の人の申込がこの顧客に登録されている可能性があるため、統合する前に確認してください。
+        </p>
       )}
     </div>
   );

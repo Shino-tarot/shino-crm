@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerCustomerForRequest } from "@/lib/customers/linking";
+import { useAccountId } from "@/components/accounts/AccountProvider";
 
 interface RegisterCustomerButtonProps {
   requestId: string;
@@ -14,6 +15,7 @@ interface RegisterCustomerButtonProps {
 export function RegisterCustomerButton({
   requestId,
 }: RegisterCustomerButtonProps) {
+  const accountId = useAccountId();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -22,7 +24,7 @@ export function RegisterCustomerButton({
     setIsSubmitting(true);
     setError("");
     try {
-      await registerCustomerForRequest(requestId);
+      await registerCustomerForRequest(accountId, requestId);
       router.refresh();
     } catch {
       setError("登録に失敗しました。時間をおいて再度お試しください。");

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { FollowUpNotice, FollowUpNotices } from "@/lib/followUp/notices";
 import { formatDateTime } from "@/lib/format";
+import { accountLabel } from "@/lib/accounts/accounts";
 
 function NoticeList({ notices }: { notices: FollowUpNotice[] }) {
   return (
@@ -32,11 +33,17 @@ function NoticeList({ notices }: { notices: FollowUpNotice[] }) {
 // 無料鑑定送信24時間後のフォロー通知(CRM内表示のみ)。
 // 機能導入前から対象だった申込は「過去分の確認」として分け、通知件数には含めない。
 // 詳細希望の回答・フォロー済みにすると、次の画面表示から一覧から消える。
-export function FollowUpNoticePanel({ newNotices, pastNotices }: FollowUpNotices) {
-  if (newNotices.length === 0 && pastNotices.length === 0) return null;
+// 表示中のアカウントの申込のみ表示する。他のアカウントは件数だけを出す(名前などは出さない)。
+export function FollowUpNoticePanel({ newNotices, pastNotices, otherAccountNewCounts }: FollowUpNotices) {
+  if (newNotices.length === 0 && pastNotices.length === 0 && otherAccountNewCounts.length === 0) return null;
 
   return (
     <div className="mx-auto max-w-5xl space-y-2 px-6 pt-4">
+      {otherAccountNewCounts.map(({ accountId, count }) => (
+        <p key={accountId} className="rounded-md border border-zinc-200 bg-white px-4 py-2 text-xs text-zinc-600">
+          「{accountLabel(accountId)}」にも未対応のフォロー通知が{count}件あります(アカウントを切り替えると確認できます)。
+        </p>
+      ))}
       {newNotices.length > 0 && (
         <details open className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3">
           <summary className="cursor-pointer text-sm font-semibold text-rose-800">

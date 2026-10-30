@@ -7,16 +7,18 @@ import {
   rowToHearingFormValues,
   rowToRequestListItem,
 } from "@/lib/freeReadingRequests/mapper";
-import { computeConsultationStats } from "@/lib/freeReadingRequests/consultationStats";
 import { getCustomerSummary } from "@/lib/customers/summary";
 import { listPaidReadings } from "@/lib/paidReadings/actions";
 import { listUpsellPurchases } from "@/lib/upsellPurchases/actions";
+import { listConversationMessages } from "@/lib/conversationMessages/actions";
+import { getCurrentAccountId } from "@/lib/accounts/current";
 import { HearingDetailClient } from "@/components/freeReadingRequests/HearingDetailClient";
 import { syncAutoStatuses } from "@/lib/statusAutoUpdate/sync";
 import { isScheduledSend } from "@/lib/statusAutoUpdate/rules";
 import { CustomerSummary } from "@/types/customerSummary";
 import { PaidReading } from "@/types/paidReading";
 import { UpsellPurchase } from "@/types/upsellPurchase";
+import { ConversationMessage } from "@/types/conversationMessage";
 
 export const dynamic = "force-dynamic";
 
@@ -28,9 +30,10 @@ export default async function HearingDetailPage({
   params,
 }: HearingDetailPageProps) {
   const { id } = await params;
+  const accountId = await getCurrentAccountId();
   // 申込取得の前にステータス自動更新を済ませる(レイアウトと同一リクエスト内では1回だけ実行される)
   await syncAutoStatuses();
-  const row = await getFreeReadingRequest(id);
+  const row = await getFreeReadingRequest(accountId, id);
 
   if (!row) {
     return (
@@ -48,28 +51,22 @@ export default async function HearingDetailPage({
 
   const listItem = rowToRequestListItem(row);
   const formValues = rowToHearingFormValues(row);
-  const history = await listFreeReadingRequestHistory(row.line_name, id);
-  const consultationStats = computeConsultationStats(
-    {
-      id,
-      lineName: row.line_name,
-      applicationDate: row.application_date,
-      createdAt: row.created_at,
-    },
-    history,
-  );
+  const history = await listFreeReadingRequestHistory(accountId, row.line_name, id);
 
   const customerId = row.customer_id;
   let customerSummary: CustomerSummary | null = null;
   let paidReadings: PaidReading[] = [];
   let upsellPurchases: UpsellPurchase[] = [];
+  let conversationMessages: ConversationMessage[] = [];
 
   if (customerId) {
-    [customerSummary, paidReadings, upsellPurchases] = await Promise.all([
-      getCustomerSummary(customerId),
-      listPaidReadings(customerId),
-      listUpsellPurchases(customerId),
-    ]);
+    [customerSummary, paidReadings, upsellPurchases, conversationMessages] =
+      await Promise.all([
+        getCustomerSummary(accountId, customerId),
+        listPaidReadings(accountId, customerId),
+        listUpsellPurchases(accountId, customerId),
+        listConversationMessages(accountId, customerId),
+      ]);
   }
 
   const now = new Date();
@@ -83,11 +80,17 @@ export default async function HearingDetailPage({
       initialValues={formValues}
       createdAt={listItem.createdAt}
       history={history}
-      consultationStats={consultationStats}
       customerId={customerId}
+      customerHidden={listItem.customerHidden}
+      linkedCustomer={
+        listItem.customerNo === null
+          ? null
+          : { customerNo: listItem.customerNo, name: listItem.customerName, birthday: listItem.customerBirthday }
+      }
       customerSummary={customerSummary}
       paidReadings={paidReadings}
       upsellPurchases={upsellPurchases}
+      conversationMessages={conversationMessages}
       initialDetailRequest={
         row.detail_request === "yes" || row.detail_request === "no"
           ? row.detail_request

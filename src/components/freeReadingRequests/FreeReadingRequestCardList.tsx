@@ -3,6 +3,7 @@ import { FreeReadingRequestListItem } from "@/lib/freeReadingRequests/mapper";
 import { STATUS_LABELS } from "@/lib/freeReadingRequests/labels";
 import { formatDate } from "@/lib/format";
 import { ScheduledSendBadge } from "@/components/freeReadingRequests/ScheduledSendBadge";
+import { CustomerHiddenBadge } from "@/components/freeReadingRequests/CustomerHiddenBadge";
 
 const CONTENT_PREVIEW_LENGTH = 40;
 
@@ -52,6 +53,9 @@ export function FreeReadingRequestCardList({
                   <p className="mt-0.5 truncate text-sm text-zinc-500">
                     相談者名: {request.name || "（未入力）"}
                   </p>
+                  <p className="mt-0.5 text-xs text-zinc-400">
+                    {request.customerNo === null ? "顧客未登録" : `顧客番号 No.${request.customerNo}`}
+                  </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   <span
@@ -60,6 +64,7 @@ export function FreeReadingRequestCardList({
                     {statusInfo.label}
                   </span>
                   {request.sendScheduled && <ScheduledSendBadge />}
+                  {request.customerHidden && <CustomerHiddenBadge />}
                 </div>
               </div>
 

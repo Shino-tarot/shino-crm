@@ -1,7 +1,8 @@
 "use server";
 
 import { supabaseServerClient } from "@/lib/supabase/server";
-import { requireStaff } from "@/lib/auth/requireStaff";
+import { isCustomerInAccount, requireStaffAccount } from "@/lib/accounts/current";
+import { AccountId } from "@/lib/accounts/accounts";
 import { UpsellPurchase, UpsellPurchaseFormValues } from "@/types/upsellPurchase";
 import { validateUpsellPurchaseForm } from "@/lib/upsellPurchases/validation";
 import {
@@ -14,14 +15,17 @@ export type SaveUpsellPurchaseResult =
   | { ok: true; id: string }
   | { ok: false; errors: Record<string, string> };
 
+// 全ての関数の第1引数は「画面を表示したときのアカウント」。そのアカウントのデータだけを読み書きする
 export async function listUpsellPurchases(
+  accountId: AccountId,
   customerId: string,
 ): Promise<UpsellPurchase[]> {
-  await requireStaff();
+  await requireStaffAccount(accountId);
   const { data, error } = await supabaseServerClient
     .from("upsell_purchases")
     .select("*")
     .eq("customer_id", customerId)
+    .eq("account_id", accountId)
     .is("deleted_at", null)
     .order("purchase_date", { ascending: false })
     .order("created_at", { ascending: false });
@@ -30,10 +34,14 @@ export async function listUpsellPurchases(
 }
 
 export async function createUpsellPurchase(
+  accountId: AccountId,
   customerId: string,
   values: UpsellPurchaseFormValues,
 ): Promise<SaveUpsellPurchaseResult> {
-  await requireStaff();
+  await requireStaffAccount(accountId);
+  if (!(await isCustomerInAccount(accountId, customerId))) {
+    return { ok: false, errors: { _form: "顧客が見つかりません。画面を再読み込みしてください。" } };
+  }
   const result = validateUpsellPurchaseForm(values);
   if (!result.valid) {
     return { ok: false, errors: result.errors };
@@ -41,7 +49,7 @@ export async function createUpsellPurchase(
 
   const { data, error } = await supabaseServerClient
     .from("upsell_purchases")
-    .insert({ customer_id: customerId, ...upsellPurchaseToRow(result.data) })
+    .insert({ account_id: accountId, customer_id: customerId, ...upsellPurchaseToRow(result.data) })
     .select("id")
     .single();
 
@@ -56,10 +64,11 @@ export async function createUpsellPurchase(
 }
 
 export async function updateUpsellPurchase(
+  accountId: AccountId,
   id: string,
   values: UpsellPurchaseFormValues,
 ): Promise<SaveUpsellPurchaseResult> {
-  await requireStaff();
+  await requireStaffAccount(accountId);
   const result = validateUpsellPurchaseForm(values);
   if (!result.valid) {
     return { ok: false, errors: result.errors };
@@ -68,7 +77,8 @@ export async function updateUpsellPurchase(
   const { error } = await supabaseServerClient
     .from("upsell_purchases")
     .update(upsellPurchaseToRow(result.data))
-    .eq("id", id);
+    .eq("id", id)
+    .eq("account_id", accountId);
 
   if (error) {
     console.error("[upsell-purchases] update failed:", error.message);
@@ -82,12 +92,13 @@ export async function updateUpsellPurchase(
 
 // 物理削除ではなく論理削除(deleted_atをセット)する。
 // 呼び出し元(UI)で必ず確認ダイアログを表示してから呼ぶこと。
-export async function deleteUpsellPurchase(id: string): Promise<void> {
-  await requireStaff();
+export async function deleteUpsellPurchase(accountId: AccountId, id: string): Promise<void> {
+  await requireStaffAccount(accountId);
   const { error } = await supabaseServerClient
     .from("upsell_purchases")
     .update({ deleted_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("account_id", accountId);
 
   if (error) {
     console.error("[upsell-purchases] delete failed:", error.message);

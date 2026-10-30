@@ -1,7 +1,8 @@
 "use server";
 
 import { supabaseServerClient } from "@/lib/supabase/server";
-import { requireStaff } from "@/lib/auth/requireStaff";
+import { isCustomerInAccount, requireStaffAccount } from "@/lib/accounts/current";
+import { AccountId } from "@/lib/accounts/accounts";
 import { PaidReading, PaidReadingFormValues } from "@/types/paidReading";
 import { validatePaidReadingForm } from "@/lib/paidReadings/validation";
 import {
@@ -15,14 +16,17 @@ export type SavePaidReadingResult =
   | { ok: false; errors: Record<string, string> };
 
 // 論理削除(deleted_at)済みの行は一覧・集計から除外する。
+// 全ての関数の第1引数は「画面を表示したときのアカウント」。そのアカウントのデータだけを読み書きする
 export async function listPaidReadings(
+  accountId: AccountId,
   customerId: string,
 ): Promise<PaidReading[]> {
-  await requireStaff();
+  await requireStaffAccount(accountId);
   const { data, error } = await supabaseServerClient
     .from("paid_readings")
     .select("*")
     .eq("customer_id", customerId)
+    .eq("account_id", accountId)
     .is("deleted_at", null)
     .order("purchase_date", { ascending: false })
     .order("created_at", { ascending: false });
@@ -31,10 +35,14 @@ export async function listPaidReadings(
 }
 
 export async function createPaidReading(
+  accountId: AccountId,
   customerId: string,
   values: PaidReadingFormValues,
 ): Promise<SavePaidReadingResult> {
-  await requireStaff();
+  await requireStaffAccount(accountId);
+  if (!(await isCustomerInAccount(accountId, customerId))) {
+    return { ok: false, errors: { _form: "顧客が見つかりません。画面を再読み込みしてください。" } };
+  }
   const result = validatePaidReadingForm(values);
   if (!result.valid) {
     return { ok: false, errors: result.errors };
@@ -42,7 +50,7 @@ export async function createPaidReading(
 
   const { data, error } = await supabaseServerClient
     .from("paid_readings")
-    .insert({ customer_id: customerId, ...paidReadingToRow(result.data) })
+    .insert({ account_id: accountId, customer_id: customerId, ...paidReadingToRow(result.data) })
     .select("id")
     .single();
 
@@ -57,10 +65,11 @@ export async function createPaidReading(
 }
 
 export async function updatePaidReading(
+  accountId: AccountId,
   id: string,
   values: PaidReadingFormValues,
 ): Promise<SavePaidReadingResult> {
-  await requireStaff();
+  await requireStaffAccount(accountId);
   const result = validatePaidReadingForm(values);
   if (!result.valid) {
     return { ok: false, errors: result.errors };
@@ -69,7 +78,8 @@ export async function updatePaidReading(
   const { error } = await supabaseServerClient
     .from("paid_readings")
     .update(paidReadingToRow(result.data))
-    .eq("id", id);
+    .eq("id", id)
+    .eq("account_id", accountId);
 
   if (error) {
     console.error("[paid-readings] update failed:", error.message);
@@ -83,12 +93,13 @@ export async function updatePaidReading(
 
 // 物理削除ではなく論理削除(deleted_atをセット)する。
 // 呼び出し元(UI)で必ず確認ダイアログを表示してから呼ぶこと。
-export async function deletePaidReading(id: string): Promise<void> {
-  await requireStaff();
+export async function deletePaidReading(accountId: AccountId, id: string): Promise<void> {
+  await requireStaffAccount(accountId);
   const { error } = await supabaseServerClient
     .from("paid_readings")
     .update({ deleted_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("account_id", accountId);
 
   if (error) {
     console.error("[paid-readings] delete failed:", error.message);

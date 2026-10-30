@@ -1,18 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { LineHearingPasteBox } from "@/components/freeReadingRequests/LineHearingPasteBox";
+import {
+  HearingSourceMessage,
+  LineHearingPasteBox,
+} from "@/components/freeReadingRequests/LineHearingPasteBox";
 import { ParsedHearing } from "@/lib/freeReadingRequests/parseHearingText";
 
 interface LineHearingImportAccordionProps {
-  onParsed: (parsed: ParsedHearing) => void;
+  currentValues: ParsedHearing;
+  onApply: (values: Partial<ParsedHearing>) => void;
+  lineMessages?: HearingSourceMessage[];
 }
 
 // 普段カルテを閲覧するだけの時に画面上部を占有しないよう、折りたたみにして
-// 初期状態は閉じておく。中の解析処理(LineHearingPasteBox / parseHearingText)は
-// 一切変更していない。
+// 初期状態は閉じておく。
 export function LineHearingImportAccordion({
-  onParsed,
+  currentValues,
+  onApply,
+  lineMessages,
 }: LineHearingImportAccordionProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -29,7 +35,7 @@ export function LineHearingImportAccordion({
 
       {isOpen && (
         <div className="mt-3">
-          <LineHearingPasteBox onParsed={onParsed} />
+          <LineHearingPasteBox currentValues={currentValues} onApply={onApply} lineMessages={lineMessages} />
         </div>
       )}
     </section>

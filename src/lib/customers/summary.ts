@@ -1,7 +1,8 @@
 "use server";
 
 import { supabaseServerClient } from "@/lib/supabase/server";
-import { requireStaff } from "@/lib/auth/requireStaff";
+import { requireStaffAccount } from "@/lib/accounts/current";
+import { AccountId } from "@/lib/accounts/accounts";
 import { CustomerSummary } from "@/types/customerSummary";
 
 // サマリー4項目(無料鑑定回数・有料鑑定回数・アップセル回数・累計購入額)は
@@ -9,23 +10,27 @@ import { CustomerSummary } from "@/types/customerSummary";
 // 累計購入額 = paid_readings.amount合計 + upsell_purchases.amount合計(無料鑑定は0円扱い)。
 // 論理削除(deleted_at)済みの購入・鑑定は集計対象から除外する。
 export async function getCustomerSummary(
+  accountId: AccountId,
   customerId: string,
 ): Promise<CustomerSummary> {
-  await requireStaff();
+  await requireStaffAccount(accountId);
   const [freeReadingRes, paidReadingsRes, upsellRes] = await Promise.all([
     supabaseServerClient
       .from("free_reading_requests")
       .select("id", { count: "exact", head: true })
-      .eq("customer_id", customerId),
+      .eq("customer_id", customerId)
+      .eq("account_id", accountId),
     supabaseServerClient
       .from("paid_readings")
       .select("amount")
       .eq("customer_id", customerId)
+      .eq("account_id", accountId)
       .is("deleted_at", null),
     supabaseServerClient
       .from("upsell_purchases")
       .select("amount")
       .eq("customer_id", customerId)
+      .eq("account_id", accountId)
       .is("deleted_at", null),
   ]);
 

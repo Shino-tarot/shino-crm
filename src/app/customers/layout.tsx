@@ -6,6 +6,8 @@ import { requireStaffPage } from "@/lib/auth/requireStaff";
 import { syncAutoStatuses } from "@/lib/statusAutoUpdate/sync";
 import { FollowUpNoticePanel } from "@/components/layout/FollowUpNoticePanel";
 import { getFollowUpNotices } from "@/lib/followUp/notices";
+import { getCurrentAccountId } from "@/lib/accounts/current";
+import { AccountProvider } from "@/components/accounts/AccountProvider";
 
 // 顧客情報を扱う管理画面のため、検索エンジンにインデックスさせない
 export const metadata: Metadata = {
@@ -20,18 +22,21 @@ export default async function CustomersLayout({
   children: React.ReactNode;
 }>) {
   await requireStaffPage();
+  // 選択中のアカウント(鯛子・夜宵)。この配下の画面はすべてこのアカウントのデータだけを表示する
+  const accountId = await getCurrentAccountId();
   // CRMを開いたとき(と10分ごとの再取得時)に、送信日時を過ぎた鑑定のステータスを進める
+  // (申込と同じ顧客の有料鑑定だけを見るため、アカウントをまたいで処理されることはない)
   await syncAutoStatuses();
   // 自動更新の後に読むことで、対応不要・完了などの最新ステータスで通知対象を判定する
-  const followUpNotices = await getFollowUpNotices();
+  const followUpNotices = await getFollowUpNotices(accountId);
 
   return (
-    <>
+    <AccountProvider accountId={accountId}>
       <AutoRefresh />
       <DbLabelBanner />
-      <AppHeader />
+      <AppHeader accountId={accountId} />
       <FollowUpNoticePanel {...followUpNotices} />
       {children}
-    </>
+    </AccountProvider>
   );
 }

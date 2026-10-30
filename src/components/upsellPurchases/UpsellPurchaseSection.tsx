@@ -11,6 +11,7 @@ import {
 import { UpsellPurchaseCard } from "@/components/upsellPurchases/UpsellPurchaseCard";
 import { UpsellPurchaseFormModal } from "@/components/upsellPurchases/UpsellPurchaseFormModal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useAccountId } from "@/components/accounts/AccountProvider";
 
 interface UpsellPurchaseSectionProps {
   customerId: string | null;
@@ -21,6 +22,7 @@ export function UpsellPurchaseSection({
   customerId,
   purchases,
 }: UpsellPurchaseSectionProps) {
+  const accountId = useAccountId();
   const router = useRouter();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTarget, setEditingTarget] = useState<UpsellPurchase | null>(null);
@@ -45,8 +47,8 @@ export function UpsellPurchaseSection({
       return { ok: false as const, errors: { _form: "顧客登録が必要です。" } };
     }
     const result = editingTarget
-      ? await updateUpsellPurchase(editingTarget.id, values)
-      : await createUpsellPurchase(customerId, values);
+      ? await updateUpsellPurchase(accountId, editingTarget.id, values)
+      : await createUpsellPurchase(accountId, customerId, values);
     if (result.ok) {
       setIsFormOpen(false);
       setEditingTarget(null);
@@ -60,7 +62,7 @@ export function UpsellPurchaseSection({
     setIsDeleting(true);
     setDeleteError("");
     try {
-      await deleteUpsellPurchase(deletingTarget.id);
+      await deleteUpsellPurchase(accountId, deletingTarget.id);
       setDeletingTarget(null);
       router.refresh();
     } catch {

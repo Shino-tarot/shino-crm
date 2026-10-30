@@ -8,6 +8,7 @@ import {
 } from "@/lib/freeReadingRequests/labels";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { ScheduledSendBadge } from "@/components/freeReadingRequests/ScheduledSendBadge";
+import { CustomerHiddenBadge } from "@/components/freeReadingRequests/CustomerHiddenBadge";
 
 const CONTENT_PREVIEW_LENGTH = 40;
 
@@ -59,6 +60,9 @@ export function FreeReadingRequestTable({
             </th>
             <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
               ステータス
+            </th>
+            <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
+              顧客番号
             </th>
             <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-zinc-500">
               LINE表示名
@@ -120,7 +124,17 @@ export function FreeReadingRequestTable({
                       {statusInfo.label}
                     </span>
                     {request.sendScheduled && <ScheduledSendBadge />}
+                  {request.customerHidden && <CustomerHiddenBadge />}
                   </div>
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-zinc-600">
+                  {request.customerId && request.customerNo !== null ? (
+                    <Link href={`/customers/${request.customerId}`} className="hover:text-violet-700">
+                      No.{request.customerNo}
+                    </Link>
+                  ) : (
+                    <span className="text-xs text-zinc-400">未登録</span>
+                  )}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 font-medium">
                   <Link

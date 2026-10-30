@@ -7,45 +7,46 @@ import { FreeReadingRequestListItem } from "@/lib/freeReadingRequests/mapper";
 import { STATUS_LABELS } from "@/lib/freeReadingRequests/labels";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { CopyButton } from "@/components/ui/CopyButton";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { linkRequestsAsSameCustomer } from "@/lib/customers/linking";
-import { getCustomerSummary } from "@/lib/customers/summary";
-import { CustomerSummary } from "@/types/customerSummary";
-
-function displayLabel(name: string, lineName: string): string {
-  return lineName || name || "（名前未入力）";
-}
+import { CustomerHiddenBadge } from "@/components/freeReadingRequests/CustomerHiddenBadge";
+import { getMergePreview, linkRequestsAsSameCustomer } from "@/lib/customers/linking";
+import { MergeConfirmation } from "@/lib/customers/mergeRules";
+import { MergePreview } from "@/types/customerMerge";
+import { MergeConfirmModal } from "@/components/freeReadingRequests/MergeConfirmModal";
+import { useAccountId } from "@/components/accounts/AccountProvider";
+import {
+  REQUEST_CUSTOMER_MISMATCH_LABELS,
+  requestCustomerMismatch,
+} from "@/lib/freeReadingRequests/customerLink";
 
 interface FreeReadingHistoryCardProps {
   item: FreeReadingRequestListItem;
   currentRequestId: string;
   currentCustomerId: string | null;
-  currentName: string;
-  currentLineName: string;
+  // 表示中の申込(統合先)の顧客が非表示中か
+  currentCustomerHidden: boolean;
   sequenceNumber: number;
 }
 
-// 過去の無料鑑定履歴1件分のカード。デフォルトは折りたたみ、
+// 同じLINE表示名の申込1件分のカード(同じ人物とは限らない)。デフォルトは折りたたみ、
 // 「全文を見る」でヒアリング内容・送付した無料鑑定文を展開表示する。
-// 「同じ顧客として紐付ける」は必ず確認ダイアログを経由し、
+// 「同じ顧客として紐付ける」は必ず確認画面(MergeConfirmModal)を経由し、
 // LINE表示名だけを根拠にした自動統合は行わない(スタッフの明示操作のみ)。
-// ダイアログを開く前に、統合元(この申込)の顧客に何件の鑑定・購入履歴が
-// 紐づいているかを取得して表示し、誤って別人を統合しないよう判断材料を示す。
+// 確認画面では2人の顧客番号・名前・生年月日・LINE連携・申込履歴を並べて比べられるようにする。
 export function FreeReadingHistoryCard({
   item,
   currentRequestId,
   currentCustomerId,
-  currentName,
-  currentLineName,
+  currentCustomerHidden,
   sequenceNumber,
 }: FreeReadingHistoryCardProps) {
+  const accountId = useAccountId();
   const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLinkConfirmOpen, setIsLinkConfirmOpen] = useState(false);
   const [isLinking, setIsLinking] = useState(false);
   const [linkError, setLinkError] = useState("");
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
-  const [mergePreview, setMergePreview] = useState<CustomerSummary | null>(null);
+  const [mergePreview, setMergePreview] = useState<MergePreview | null>(null);
 
   const statusInfo = STATUS_LABELS[item.status] ?? {
     label: item.status,
@@ -55,59 +56,97 @@ export function FreeReadingHistoryCard({
   const alreadyLinked =
     currentCustomerId !== null && item.customerId === currentCustomerId;
 
-  const sourceLabel = displayLabel(item.name, item.lineName);
-  const targetLabel = displayLabel(currentName, currentLineName);
+  // この申込に書かれた名前・生年月日と、登録先の顧客が違う(別の顧客に誤って登録された申込の可能性)
+  const mismatch =
+    item.customerNo === null
+      ? []
+      : requestCustomerMismatch(
+          { name: item.name, birthDate: item.birthDate },
+          { readingName: item.customerName, birthday: item.customerBirthday },
+        );
+
+  // 非表示中の顧客が関わる統合はしない(サーバー側でも拒否する)
+  const mergeBlockedByHidden = currentCustomerHidden || item.customerHidden;
 
   async function handleOpenLinkDialog() {
     setLinkError("");
-    if (item.customerId) {
-      setIsLoadingPreview(true);
-      try {
-        const summary = await getCustomerSummary(item.customerId);
-        setMergePreview(summary);
-      } catch {
-        setMergePreview(null);
-      } finally {
-        setIsLoadingPreview(false);
+    setIsLoadingPreview(true);
+    try {
+      const result = await getMergePreview(accountId, currentRequestId, item.id);
+      if (!result.ok) {
+        setLinkError(result.error);
+        return;
       }
-    } else {
-      setMergePreview(null);
+      if (result.preview.kind === "already_same") {
+        router.refresh();
+        return;
+      }
+      setMergePreview(result.preview);
+      setIsLinkConfirmOpen(true);
+    } catch {
+      setLinkError("確認情報の取得に失敗しました。時間をおいて再度お試しください。");
+    } finally {
+      setIsLoadingPreview(false);
     }
-    setIsLinkConfirmOpen(true);
   }
 
-  async function handleLinkConfirm() {
+  async function handleLinkConfirm(confirmation: MergeConfirmation) {
+    // 処理中の二重実行を防ぐ(確認ボタンも処理中は無効化している)
+    if (isLinking) return;
     setIsLinking(true);
     setLinkError("");
     try {
-      await linkRequestsAsSameCustomer(currentRequestId, item.id);
+      const result = await linkRequestsAsSameCustomer(accountId, currentRequestId, item.id, confirmation);
       setIsLinkConfirmOpen(false);
-      router.refresh();
+      if (result.ok) {
+        router.refresh();
+      } else {
+        setLinkError(result.error);
+      }
     } catch {
-      setLinkError("紐付けに失敗しました。時間をおいて再度お試しください。");
+      setIsLinkConfirmOpen(false);
+      setLinkError("紐付けに失敗しました。データは変更されていません。時間をおいて再度お試しください。");
     } finally {
       setIsLinking(false);
     }
   }
 
-  const hasExistingHistory =
-    mergePreview !== null &&
-    (mergePreview.freeReadingCount > 1 ||
-      mergePreview.paidReadingCount > 0 ||
-      mergePreview.upsellCount > 0);
-
   return (
     <li className="rounded-md border border-zinc-200 p-3">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="text-sm font-semibold text-zinc-900">
-          無料鑑定 #{sequenceNumber}
+          同じLINE表示名の申込 {sequenceNumber}
         </span>
         {alreadyLinked && (
           <span className="inline-block whitespace-nowrap rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
             同じ顧客
           </span>
         )}
+        {!alreadyLinked && (
+          <span className="inline-block whitespace-nowrap rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-600">
+            表示名のみ一致
+          </span>
+        )}
+        {item.customerHidden && <CustomerHiddenBadge />}
+        <span className="inline-block whitespace-nowrap rounded-full border border-zinc-300 px-2.5 py-0.5 text-xs text-zinc-600">
+          {item.customerNo === null ? "顧客未登録" : `顧客 No.${item.customerNo}`}
+        </span>
       </div>
+
+      <p className="mt-1 text-sm text-zinc-900">
+        {item.name || "（名前未入力）"}
+        <span className="ml-2 text-xs text-zinc-500">
+          生年月日：{item.birthDate ? formatDate(item.birthDate) : "—"}
+        </span>
+      </p>
+      {mismatch.length > 0 && (
+        <p className="mt-1 rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-900">
+          この申込は顧客「No.{item.customerNo} {item.customerName || "（名前未入力）"}」
+          {item.customerBirthday ? `（${formatDate(item.customerBirthday)}）` : ""}
+          に登録されています。申込の{mismatch.map((m) => REQUEST_CUSTOMER_MISMATCH_LABELS[m]).join("・")}
+          が顧客の情報と違うため、別の人の申込が登録されている可能性があります。
+        </p>
+      )}
 
       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
         <span className="text-zinc-600">
@@ -208,50 +247,23 @@ export function FreeReadingHistoryCard({
         <button
           type="button"
           onClick={handleOpenLinkDialog}
-          disabled={isLoadingPreview}
+          disabled={isLoadingPreview || mergeBlockedByHidden}
           className="mt-2 w-full rounded-md border border-violet-300 bg-white px-3 py-2 text-sm font-medium text-violet-700 hover:bg-violet-50 disabled:opacity-50"
         >
-          {isLoadingPreview ? "確認中..." : "同じ顧客として紐付ける"}
+          {isLoadingPreview ? "確認中..." : "この候補を、今開いている顧客にまとめる"}
         </button>
+      )}
+      {!alreadyLinked && mergeBlockedByHidden && (
+        <p className="mt-1 text-xs text-amber-800">
+          非表示中の顧客が含まれるため紐付けできません。顧客管理で復元してから操作してください。
+        </p>
       )}
       {linkError && <p className="mt-1 text-sm text-red-600">{linkError}</p>}
 
-      {isLinkConfirmOpen && (
-        <ConfirmDialog
-          title="同じ顧客として紐付け"
-          message={
-            <div className="space-y-2">
-              <p>
-                統合元:「<strong>{sourceLabel}</strong>」（この無料鑑定申込）
-                <br />
-                統合先:「<strong>{targetLabel}</strong>」（今開いているお客様）
-              </p>
-              {hasExistingHistory && mergePreview ? (
-                <p className="rounded-md bg-amber-50 px-3 py-2 text-amber-800">
-                  統合元の顧客には現在、無料鑑定
-                  {mergePreview.freeReadingCount}件・有料鑑定
-                  {mergePreview.paidReadingCount}件・アップセル
-                  {mergePreview.upsellCount}件が紐づいています。
-                  <strong>
-                    この顧客に紐づいている無料鑑定・有料鑑定・購入履歴もまとめて統合先へ移動します。
-                  </strong>
-                </p>
-              ) : (
-                <p>
-                  統合元の申込を、統合先のお客様と同じ顧客として紐付けます。
-                </p>
-              )}
-              <p>
-                <strong>
-                  別人を誤って統合していないか、必ずご確認ください。
-                </strong>
-                この操作は取り消せません。
-              </p>
-            </div>
-          }
-          confirmLabel="紐付ける"
-          confirmingLabel="処理中..."
-          isConfirming={isLinking}
+      {isLinkConfirmOpen && mergePreview && mergePreview.kind !== "already_same" && (
+        <MergeConfirmModal
+          preview={mergePreview}
+          isSubmitting={isLinking}
           onCancel={() => setIsLinkConfirmOpen(false)}
           onConfirm={handleLinkConfirm}
         />

@@ -9,6 +9,7 @@ import { FreeReadingFormValues } from "@/types/freeReadingRequest";
 import { validateFreeReadingForm } from "@/lib/freeReadingRequests/validation";
 import { normalizedRequestToInsertRow } from "@/lib/freeReadingRequests/mapper";
 import { createCustomerSafely } from "@/lib/customers/createCustomer";
+import { INBOUND_ACCOUNT_ID } from "@/lib/accounts/accounts";
 
 const MIN_ELAPSED_MS = 2000;
 
@@ -46,7 +47,9 @@ export async function submitFreeReadingRequest(
     return { ok: false, errors: result.errors };
   }
 
+  // 公開フォームは当面鯛子専用のため、申込・顧客とも鯛子として保存する
   const customerId = await createCustomerSafely({
+    accountId: INBOUND_ACCOUNT_ID,
     lineName: result.data.lineName ?? "",
     readingName: result.data.name,
     birthDate: result.data.birthDate,
@@ -56,6 +59,7 @@ export async function submitFreeReadingRequest(
 
   const { error } = await supabaseServerClient.from("free_reading_requests").insert({
     ...normalizedRequestToInsertRow(result.data),
+    account_id: INBOUND_ACCOUNT_ID,
     customer_id: customerId,
   });
 

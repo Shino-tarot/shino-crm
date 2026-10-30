@@ -11,6 +11,7 @@ import {
   DetailRequestValue,
 } from "@/lib/freeReadingRequests/labels";
 import { formatDateTime } from "@/lib/format";
+import { useAccountId } from "@/components/accounts/AccountProvider";
 
 interface FollowUpCardProps {
   requestId: string;
@@ -25,6 +26,7 @@ export function FollowUpCard({
   initialDetailRequest,
   initialFollowedUpAt,
 }: FollowUpCardProps) {
+  const accountId = useAccountId();
   const router = useRouter();
   const [detailRequest, setDetailRequest] =
     useState<DetailRequestValue>(initialDetailRequest);
@@ -37,7 +39,7 @@ export function FollowUpCard({
     setIsSaving(true);
     setError("");
     try {
-      const result = await updateDetailRequest(requestId, value);
+      const result = await updateDetailRequest(accountId, requestId, value);
       if (!result.ok) {
         setError(result.error);
         return;
@@ -56,7 +58,7 @@ export function FollowUpCard({
     setIsSaving(true);
     setError("");
     try {
-      const result = await updateFollowedUp(requestId, !followedUpAt);
+      const result = await updateFollowedUp(accountId, requestId, !followedUpAt);
       if (!result.ok) {
         setError(result.error);
         return;

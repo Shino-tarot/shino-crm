@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --test \"tests/unit/**/*.test.mjs\"",
+    "test:db": "node --test \"tests/db/**/*.test.mjs\""
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
@@ -17,6 +19,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.2.17",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

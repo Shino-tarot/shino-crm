@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listFreeReadingRequests } from "@/lib/freeReadingRequests/actions";
 import { FreeReadingRequestListView } from "@/components/freeReadingRequests/FreeReadingRequestListView";
+import { getCurrentAccountId } from "@/lib/accounts/current";
 import { syncAutoStatuses } from "@/lib/statusAutoUpdate/sync";
 import { listScheduledPaidReadingCustomerIds } from "@/lib/statusAutoUpdate/scheduled";
 import { isScheduledSend } from "@/lib/statusAutoUpdate/rules";
@@ -16,8 +17,9 @@ export default async function FreeReadingRequestsPage({
 }: FreeReadingRequestsPageProps) {
   // 一覧取得の前にステータス自動更新を済ませる(レイアウトと同一リクエスト内では1回だけ実行される)
   await syncAutoStatuses();
+  const accountId = await getCurrentAccountId();
   const [rawRequests, scheduledPaidCustomerIds, { deleted }] = await Promise.all([
-    listFreeReadingRequests(),
+    listFreeReadingRequests(accountId),
     listScheduledPaidReadingCustomerIds(),
     searchParams,
   ]);

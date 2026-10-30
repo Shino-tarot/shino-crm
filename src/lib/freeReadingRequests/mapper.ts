@@ -49,7 +49,18 @@ export interface FreeReadingRequestRow {
   // 0011マイグレーション未適用のDBではundefinedになりうる
   detail_request?: string | null;
   followed_up_at?: string | null;
+  // 紐づく顧客の非表示状態(FREE_READING_REQUEST_SELECTで埋め込み取得。顧客未登録はnull)
+  customer?: {
+    deleted_at: string | null;
+    customer_no?: number;
+    reading_name?: string;
+    birthday?: string | null;
+  } | null;
 }
+
+// 申込の取得で使う列。紐づく顧客が非表示(論理削除)中かを一緒に読む(0013マイグレーションが必要)
+export const FREE_READING_REQUEST_SELECT =
+  "*, customer:customers!free_reading_requests_customer_id_fkey(deleted_at, customer_no, reading_name, birthday)";
 
 export interface FreeReadingRequestListItem {
   id: string;
@@ -72,6 +83,12 @@ export interface FreeReadingRequestListItem {
   customerId: string | null;
   sentReadingContent: string | null;
   sentAt: string | null;
+  // 紐づく顧客が顧客管理で非表示(論理削除)中か(「顧客は非表示中」バッジ用)
+  customerHidden: boolean;
+  // この申込が登録されている顧客(顧客未登録はnull)。申込の名前・生年月日と食い違っていないかの確認に使う
+  customerNo: number | null;
+  customerName: string | null;
+  customerBirthday: string | null;
   // 無料鑑定または紐づく有料鑑定の送信日時が未来か(「送信予約中」バッジ用)。一覧ページで付与する
   sendScheduled?: boolean;
 }
@@ -106,6 +123,10 @@ export function rowToRequestListItem(
     customerId: row.customer_id ?? null,
     sentReadingContent: row.sent_reading_content ?? null,
     sentAt: row.sent_at ?? null,
+    customerHidden: Boolean(row.customer?.deleted_at),
+    customerNo: row.customer?.customer_no ?? null,
+    customerName: row.customer?.reading_name ?? null,
+    customerBirthday: row.customer?.birthday ?? null,
   };
 }
 

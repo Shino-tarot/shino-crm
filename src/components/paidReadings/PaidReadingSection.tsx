@@ -11,6 +11,7 @@ import {
 import { PaidReadingCard } from "@/components/paidReadings/PaidReadingCard";
 import { PaidReadingFormModal } from "@/components/paidReadings/PaidReadingFormModal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useAccountId } from "@/components/accounts/AccountProvider";
 
 interface PaidReadingSectionProps {
   customerId: string | null;
@@ -23,6 +24,7 @@ export function PaidReadingSection({
   customerId,
   readings,
 }: PaidReadingSectionProps) {
+  const accountId = useAccountId();
   const router = useRouter();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTarget, setEditingTarget] = useState<PaidReading | null>(null);
@@ -45,8 +47,8 @@ export function PaidReadingSection({
       return { ok: false as const, errors: { _form: "顧客登録が必要です。" } };
     }
     const result = editingTarget
-      ? await updatePaidReading(editingTarget.id, values)
-      : await createPaidReading(customerId, values);
+      ? await updatePaidReading(accountId, editingTarget.id, values)
+      : await createPaidReading(accountId, customerId, values);
     if (result.ok) {
       setIsFormOpen(false);
       setEditingTarget(null);
@@ -60,7 +62,7 @@ export function PaidReadingSection({
     setIsDeleting(true);
     setDeleteError("");
     try {
-      await deletePaidReading(deletingTarget.id);
+      await deletePaidReading(accountId, deletingTarget.id);
       setDeletingTarget(null);
       router.refresh();
     } catch {

@@ -1,11 +1,14 @@
 import "server-only";
 import { supabaseServerClient } from "@/lib/supabase/server";
+import { AccountId } from "@/lib/accounts/accounts";
 
 // Server Action("use server")ではなくサーバー内部専用のモジュール。
 // "use server"ファイルからexportした関数は外部から直接呼び出せてしまうため、
 // 公開フォーム(認可なし)と管理画面(要ログイン)の両方から使う顧客作成処理はここに置く。
 
 export interface NewCustomerSeed {
+  // 顧客を作成するアカウント(申込と同じアカウント)
+  accountId: AccountId;
   lineName: string;
   readingName: string;
   birthDate: string | null;
@@ -19,6 +22,7 @@ export async function insertCustomer(seed: NewCustomerSeed): Promise<string> {
   const { data, error } = await supabaseServerClient
     .from("customers")
     .insert({
+      account_id: seed.accountId,
       line_name: seed.lineName,
       reading_name: seed.readingName,
       birthday: seed.birthDate,
